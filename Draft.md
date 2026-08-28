@@ -2,110 +2,87 @@
 
 ## Project Title
 
-**HollowHaven: A Context-Aware Artificial Tree Hollow for Thermally Supporting Southern/Central Greater Gliders**
+**HollowHaven: A Context-Aware Artificial Tree Hollow for Greater Gliders and Other Hollow-Using Species**
 
 ## Challenge Statement
 
-The Southern/Central Greater Glider (*Petauroides volans*) is an endangered, nocturnal marsupial that depends on large hollows in mature eucalypts for daytime refuge and breeding. These slow-forming hollows are being reduced by clearing, logging and severe bushfire. Artificial hollows can provide supplementary habitat, but their internal temperatures can be more variable and extreme than those of natural hollows.
+HollowHaven is designed primarily for the endangered Southern/Central Greater Glider (*Petauroides volans*), which depends on mature eucalypt hollows for shelter and breeding. Clearing, logging, severe bushfire and climate-related heat are reducing suitable hollows. Conventional nest boxes can help, but many are shallow, overheat, retain moisture, attract non-target species or require disruptive inspection.
 
-Gracanin et al. (2025) found that, on warm days, the best artificial nest-box design averaged 1.99 degrees C cooler than ambient temperature, compared with 7.32 degrees C for natural hollows used by greater gliders. Brown et al. (2026) also found less fluctuation in natural hollows; at an ambient maximum of 39.5 degrees C, predicted temperatures were 34.3 degrees C in nest boxes and 31.7 degrees C in hollows. The Australian Government's 2026 National Recovery Plan identifies artificial-hollow depth, orientation, thermal buffering, structural features, testing and adaptive monitoring as research priorities.
+The design challenge is:
 
-HollowHaven focuses on one measurable need: reducing thermal extremes and approximating natural-hollow buffering under changing conditions.
+**How might we create a low-disturbance artificial hollow that buffers environmental extremes, responds to animal and microclimate conditions, prioritises greater gliders and still treats other hollow-using species ethically?**
 
-**Design challenge:** How might a context-aware artificial hollow maintain a more stable thermal microclimate for Southern/Central Greater Gliders by sensing environmental change and adaptively controlling ventilation?
+## Evidence-Led Design
 
-**Research question:** Can HollowHaven reduce internal temperature extremes and more closely approximate natural-hollow thermal buffering than a conventional passive artificial shelter?
+The strongest quantitative natural-den dataset comes from Seven Mile Beach, NSW. Across 68 used hollows in 54 trees, mean DBH was 114 cm, hollow height 15.4 m, depth 2.52 m, minimum entrance dimension 18.1 cm and maximum wall thickness 8 cm. Deep vertical branch-end hollows were most common.
 
-**Hypothesis:** Under the same external heat exposure, HollowHaven will produce a lower maximum internal temperature, a smaller temperature range and a longer thermal lag than a conventional artificial hollow.
+A Commonwealth synthesis reports depths of 0.3–5.0 m (mean 2.5 m) and wall thicknesses of 1–30 cm (mean 8 cm). A 2026 study of 16 dens recorded 9–30 cm entrances, 0.7–4.0 m depths and 1–21 cm walls. Natural dens are therefore deeper and more irregular than conventional boxes.
 
-## Non-Human Stakeholder Analysis
+No species-specific optimum for internal volume is known. An occupied 2026 artificial box measured about 23 × 25 × 35–43 cm (0.022 m³). This proves that a smaller cavity can be used, not that it is optimal or thermally equivalent to a living-tree hollow.
 
-The primary stakeholder is the greater glider, which needs a dark, deep refuge with a stable daytime microclimate, low disturbance and safe entry. It is treated as a participant rather than only a monitored object: inferred occupancy changes how cautiously the system actuates.
+Greater-glider heat dissipation becomes constrained above about 20°C, but this is not a daytime-den limit. Occupied natural dens have averaged 24.7°C daily maxima, and occupied artificial and natural hollows have reached 34.0°C and 34.7°C. Occupancy indicates use, not optimality.
 
-Other hollow users, insects, trees and the microclimate are secondary stakeholders. The system infers only occupied or unoccupied conditions and never automatically excludes non-target native animals. Conservation volunteers or researchers receive an external maintenance signal and can service the electronics without opening the refuge chamber.
+Living-tree hollows can remain 7–8°C cooler than ambient and fluctuate less. In 2025, a well-performing timber box averaged 1.99°C below ambient versus 7.32°C for occupied natural hollows. A 2026 model predicted 34.3°C in a box and 31.7°C in a natural hollow at 39.5°C ambient.
 
-Context combines internal and shaded external temperature and humidity, light as a solar-exposure proxy, time, temperature trend and occupancy. The response depends on whether the chamber is heating or cooling, whether outside air can provide cooling and whether an animal may be present.
+## Proposed Solution
 
-## Project Concept
+HollowHaven is a vertically mounted, bark-textured artificial hollow with a dark, insulated and drained internal chamber. The first-generation standard prototype will use:
 
-HollowHaven is a vertically mounted scale model with an insulated deep cavity, shaded entrance, drainage and separate maintenance bay. Its depth-to-width relationship is informed by greater-glider den morphology rather than a shallow bird-box form. Modular CAD sections allow servicing without disturbing the refuge chamber.
+| Feature | Proposed specification |
+| --- | --- |
+| Internal cross-section | Approximately 230–280 × 250–300 mm |
+| Effective chamber depth | At least 400–450 mm |
+| Entrance | 120–130 mm circular opening or equivalent short axis |
+| Form | Vertical chamber; rear/lower entrance; no exposed perch |
+| Future installation height | Target 10–15 m |
+| Candidate tree | Living mature eucalypt; proposed screening threshold DBH ≥50 cm |
+| Orientation | Prefer S–SE or ESE; avoid NW afternoon exposure |
 
-Two SHT31 sensors measure internal and shaded external microclimates. A BH1750 indicates radiant exposure, while a VL53L0X detects entry and occupancy. The ESP32 combines:
+Artificial boxes with 100 mm and 150 mm entrances have been occupied, while about 130 mm may reduce some non-target access. These dimensions are engineering assumptions, not confirmed biological optima.
 
-`Context = (T_inside, T_outside, RH_inside, RH_outside, light, time, temperature slope, occupancy)`
+A 600–900 mm deep variant will test whether additional depth improves temperature stratification and buffering without requiring an impractical 2.5 m structure.
 
-The primary actuator is a servo-controlled passive vent that opens gradually when temperature is rising and outside air can provide cooling. A low-noise fan is reserved for heat-protection tests because it adds power, noise and failure costs. An external RGB LED communicates normal, heat-protection or maintenance status.
+An ESP32 will record temperature, humidity, light and movement. Optional camera/audio AI will classify events as likely glider, native visitor, possible risk visitor or noise. It supports logging and low-risk state selection only. Hidden fins respond to heat or moisture; a low-noise fan runs only when the chamber appears empty or risk is critical. An external indicator reports faults, condensation or unusual occupancy.
 
-A lightweight predictive model accessed through an inference API will estimate internal temperature 20-30 minutes ahead from recent readings. It can open the vent before the predicted peak, while local fallback logic operates if the API fails.
+## Engineering Targets
 
-## Context-Aware System States
+HollowHaven will treat thermal buffering, rather than a single “ideal” temperature, as the primary performance goal:
 
-| State | Context | Response |
-| --- | --- | --- |
-| **Normal Refuge** | Stable temperature and no developing heat load | Vent mostly closed; low-frequency sensing and logging |
-| **Warming** | Light and temperature slope indicate increasing heat load | Vent opens gradually when external conditions make ventilation useful |
-| **Heat Protection** | Predicted or measured temperature is high or rising rapidly | Vent opens further; logging frequency increases; fan is used only under the prototype's safety rules |
-| **Recovery** | External and internal temperatures are falling | Vent closes gradually with hysteresis to avoid rapid cycling or excessive cooling |
+- reduce the afternoon internal temperature peak by at least 4–5°C relative to ambient or a conventional-box control;
+- treat approximately 7°C of peak reduction as an aspirational natural-hollow benchmark;
+- measure maximum temperature, heating rate, duration of heat exposure and day–night variability;
+- retain passive shade, insulation, drainage and ventilation during power or sensor failure.
 
-Occupancy modifies every state by making actuation slower and quieter. Control thresholds are experimental settings tuned through comparison, not claims of biological injury limits.
+No defensible preferred humidity range is known. The prototype will record RH, dew point and condensation instead of claiming an unsupported target; persistent moisture triggers maintenance warnings.
 
 ## Components
 
-- **Microcontroller and logging:** ESP32 and microSD module.
-- **Sensors:** two SHT31 temperature/humidity sensors (internal and shaded external reference), BH1750 light sensor and VL53L0X time-of-flight sensor.
-- **Actuation and feedback:** micro servo for ventilation fins, low-noise 5 V fan as a secondary actuator and RGB LED for ambient human-readable status.
-- **AI/API:** lightweight thermal forecasting model exposed through an inference API; local fallback logic if connectivity fails.
-- **Power:** USB power bank for the classroom prototype; a field version would require low-power firmware and solar feasibility testing.
-- **Enclosure:** team-designed CAD model with a deep vertical chamber, insulated wall system, shaded entrance, drainage, hidden ventilation path and separate electronics access.
+ESP32; SHT31/DHT22 temperature-humidity sensor; PIR/VL53L0X motion sensor; BH1750 light sensor; optional camera/microphone; servo ventilation; low-noise fan; external indicator; USB power; and a modular insulated, drained 3D-printed shell. A field version could add solar charging and deep sleep.
 
-## Evaluation Plan
-
-Three equal-scale chambers will receive repeated, controlled radiant heat exposure: (A) basic plywood, (B) insulated passive and (C) adaptive HollowHaven. They share the same heat conditions and external reference; no live animals are used.
-
-The comparison will measure:
-
-- maximum internal temperature, `T_max`;
-- experimental temperature range, `T_max - T_min`;
-- thermal buffering while ambient air is hotter, `B = T_ambient - T_inside`;
-- time above declared evaluation thresholds, such as `t(T > 30 degrees C)` and `t(T > 35 degrees C)`; and
-- thermal lag between the external and internal temperature peaks.
-
-These thresholds are comparison markers, not biological harm claims. Success means repeatedly reducing peak temperature and fluctuation relative to the passive control and moving the curve toward literature-derived natural-hollow behaviour. Prediction error, response time and API fallback will also be recorded.
-
-## More-Than-Human Design Rationale
-
-HollowHaven applies Animal-Computer Interaction and more-than-human design by translating the need for low-disturbance thermal refuge into its form and control rules. Occupancy slows actuation, passive control is preferred, ambiguous data produces conservative responses and native visitors are not automatically excluded. It supplements rather than replaces mature hollow-bearing trees.
-
-## Risks and Open Questions
-
-- **Ethics:** Only physical simulations will be used; wildlife deployment requires expert approval.
-- **Validity:** Scale-model comparison cannot directly prove field safety or animal benefit.
-- **Safety:** Ventilation must avoid rain, overcooling, trapping and rapid movement.
-- **AI reliability:** Local sensing and fail-safe logic continue if prediction is inaccurate or unavailable.
-- **Materials:** Geometry, orientation, ventilation and the wall system must be tested together; insulation is not assumed to solve overheating alone.
-- **Fabrication and power:** Service access and fan energy use require validation.
-
-## Preliminary Timeline
+## Testing and Timeline
 
 | Period | Work |
 | --- | --- |
-| Week 4 | Submit proposal; confirm components, research question and test protocol. |
-| Weeks 5-6 | Build dual-SHT31, light and occupancy sensing; implement logging and baseline tests. |
-| Weeks 7-8 | Build passive and adaptive control logic; integrate servo, LED and inference API; begin CAD. |
-| Week 9 | Demonstrate the four states, preliminary temperature curves and response to tutor feedback. |
-| Weeks 10-11 | Fabricate and integrate the three test chambers; run repeated heat-exposure experiments. |
-| Weeks 11-12 | Analyse metrics, tune control logic, document failures and iterations, and prepare report, manual and video. |
-| Week 13 | Present the live comparative experiment and more-than-human reflection. |
+| Week 4 | Confirm species, evidence, dimensions and proposal |
+| Weeks 5–6 | Build ESP32 sensing and environmental logging |
+| Weeks 7–8 | Add ventilation, ambient feedback and AI classification |
+| Week 9 | Demonstrate context states and early enclosure |
+| Weeks 10–11 | Fabricate and integrate standard and deep variants |
+| Weeks 11–12 | Test heat, moisture, power failure and misclassification |
+| Week 13 | Complete report, manual and final demonstration |
 
-## Initial References
+Testing uses controlled heat, objects and prerecorded media, not wild animals. Success means measurable buffering, safe failure behaviour, reliable sensing and explainable state changes—not proven field suitability.
 
-### Ecological Motivation
+## Risks and Limitations
 
-- DCCEEW (2026), *National Recovery Plan for Greater Gliders*. https://www.dcceew.gov.au/environment/biodiversity/threatened/publications/recovery/greater-gliders
-- Gracanin, A. et al. (2025), *Rapid Uptake of Nest Boxes by the Endangered Greater Glider (Petauroides volans)*. https://doi.org/10.1111/emr.70000
-- Brown, T. J. et al. (2026), *Supplementary habitat use by endangered southern greater gliders (Petauroides volans)*. https://doi.org/10.1071/PC25043
+- **Ethics:** No testing with wild animals without approval.
+- **Ecology:** Artificial hollows supplement rather than replace mature-tree protection.
+- **Heat and power:** Active cooling must fail safely without trapping an animal.
+- **Multi-species use:** Detection of another native species does not justify automatic exclusion.
+- **AI reliability:** Misclassification may trigger logging or human review only.
+- **Evidence:** Optimal volume, temperature and humidity remain uncertain.
+- **Installation:** Future work at 10–15 m requires ethics, land-manager and arborist approval.
 
-### Design Rationale and Similar Work
+## Project Value
 
-- Howard, I. et al. (2022), *Helping wildlife beat the heat: Testing strategies to improve the thermal performance of nest boxes*. https://doi.org/10.7882/AZ.2022.026
-- Hofman, M., Gracanin, A. and Mikac, K. M. (2022), *Greater glider (Petauroides volans) den tree and hollow characteristics*. https://doi.org/10.1071/AM22008
+HollowHaven is a testable pervasive-computing prototype using natural hollows as a benchmark while separating evidence, engineering targets and hypotheses. It combines Animal–Computer Interaction, more-than-human design, sensing, cautious AI, physical actuation and custom fabrication.
