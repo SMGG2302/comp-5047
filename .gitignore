@@ -1,0 +1,19 @@
+# Existing local runtime; published sources are project/ and website/
+/hollowhaven_wifi/
+**/.pio/
+**/build/
+**/node_modules/
+**/__pycache__/
+**/.vscode/
+**/recordings/
+website/data/
+**/managed_components/
+**/sdkconfig
+**/sdkconfig.old
+**/sdkconfig.esp32dev
+*.wav
+*.log
+*.pid
+.env
+.env.*
+project/experiment_*.csv

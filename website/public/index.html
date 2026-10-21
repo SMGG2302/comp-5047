@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HollowHaven · 树屋观察站</title><link rel="stylesheet" href="/style.css"></head>
+<body>
+<aside class="sidebar">
+  <a class="brand" href="#"><span class="brand-icon">H</span><span>HollowHaven<small>树屋观察站 / FIELD MONITOR</small></span></a>
+  <div class="nav-label">工作空间</div>
+  <button class="nav active" data-tab="overview"><span>◉</span> 实时监测</button>
+  <button class="nav" data-tab="recordings"><span>≋</span> 声音档案 <b id="record-count">0</b></button>
+  <button class="nav" data-tab="settings"><span>⚙</span> 连接与识别设置</button>
+  <div class="sidebar-bottom"><span class="leaf">⌁</span><strong>为更多生命留一处庇护</strong><p>保护对象 · 大袋鼯<br>Greater Glider</p><div class="local-badge">● 本地工作空间</div></div>
+</aside>
+<main>
+  <header><div class="breadcrumb">HOLLOWHAVEN <span>/</span> <span id="page-name">实时监测</span></div><div class="header-right"><span id="clock"></span><span class="badge" id="connection-badge">未连接设备</span></div></header>
+  <section id="overview" class="tab">
+    <div class="title-row"><div><div class="eyebrow">OBSERVE · LISTEN · UNDERSTAND</div><h1>树屋里的每一次变化</h1><p class="subtitle">环境、占用与声音，汇聚在同一个观察窗口。</p></div><button class="primary connect-button">连接 ESP32</button></div>
+    <div class="network-note"><span>⌁</span><div><strong id="network-title">等待连接树屋</strong><p id="network-detail">先将电脑连接到 HollowHaven-ESP32 热点，再点击连接。页面和本地录音无需互联网。</p></div><a href="/api/export" class="text-link">导出本次 CSV ↗</a></div>
+    <div class="hero-row">
+      <article class="occupancy panel"><div class="panel-top"><span class="eyebrow">树屋占用 / PRESENCE</span><span class="badge" id="presence-badge">等待数据</span></div>
+        <div class="presence-content"><div class="hollow-art" aria-hidden="true"><div class="tree-ring ring1"></div><div class="tree-ring ring2"></div><div class="tree-ring ring3"></div><div class="tree-hole"></div><i class="signal-dot"></i></div><div><h2 id="presence-title">尚未读取</h2><p id="presence-detail">等待红外测距数据</p><span class="small-note">红外仅表示物体占用，不确认动物种类。</span></div></div>
+        <div class="occupancy-footer"><span>进入 ≤ 20cm · 离开 ≥ 25cm <small>当前固件阈值</small></span><span id="recording-state">○ 录音待机</span></div>
+      </article>
+      <article class="panel flow-panel"><div class="eyebrow">一次完整的观察</div><h3>从靠近，到留下声音</h3><ol class="flow"><li><b>01</b><div><strong>红外确认占用</strong><small>连续测距防止瞬时误触发</small></div></li><li><b>02</b><div><strong>录制 30 秒</strong><small>接收后自动保存在本机</small></div></li><li><b>03</b><div><strong>分析来访声音</strong><small>选取录音，联网后调用 API</small></div></li></ol></article>
+    </div>
+    <div class="sensor-grid">
+      <article class="sensor panel"><div class="sensor-heading"><span>洞内温度</span><span class="sensor-icon">℃</span></div><div class="reading"><b id="temperature">—</b><span>°C</span></div><small>SHT3x · 洞内环境</small></article>
+      <article class="sensor panel"><div class="sensor-heading"><span>空气湿度</span><span class="sensor-icon">◌</span></div><div class="reading"><b id="humidity">—</b><span>%RH</span></div><small>SHT3x · 相对湿度</small></article>
+      <article class="sensor panel"><div class="sensor-heading"><span>吸水层湿润度</span><span class="sensor-icon">≋</span></div><div class="reading"><b id="wick">—</b><span>ADC</span></div><small>电容探头 · 原始值，未标定百分比</small></article>
+      <article class="sensor panel"><div class="sensor-heading"><span>红外距离</span><span class="sensor-icon">↔</span></div><div class="reading"><b id="distance">—</b><span>mm</span></div><small>VL53L0X · 无效测距不会视作离开</small></article>
+    </div>
+    <div class="bottom-row">
+      <article class="panel chart-panel"><div class="panel-top"><div><h3>环境趋势</h3><p class="muted">最近 30 分钟 · 断线处留空</p></div><select id="metric" aria-label="趋势指标"><option value="inside_temp_c">温度 °C</option><option value="inside_rh_pct">空气湿度 %RH</option><option value="wick_raw">吸水层 ADC</option><option value="distance_mm">红外距离 mm</option><option value="sound_rms">声音 RMS</option></select></div><canvas id="trend" aria-label="传感器历史趋势图"></canvas></article>
+      <article class="panel sound-panel"><div class="eyebrow">SOUND / 声音采集</div><div class="sound-value"><b id="sound-rms">—</b><span>RMS · ADC单位</span></div><div class="sound-bars" aria-hidden="true"></div><div class="sound-meta"><span>峰峰值 <b id="sound-p2p">—</b></span><span>削顶样本 <b id="sound-clipped">—</b></span></div><p class="muted">SEN0487 · 声音幅度不等于分贝<br>完成的录音会出现在声音档案中。</p><button class="secondary" data-go="recordings">查看声音档案 →</button></article>
+    </div>
+    <article class="panel log-panel"><div class="panel-top"><h3>观察日志</h3><span class="muted" id="last-update">暂无更新</span></div><div id="event-list" class="events"><p class="empty-small">连接设备后，这里会记录占用变化与文件接收事件。</p></div></article>
+  </section>
+  <section id="recordings" class="tab" hidden>
+    <div class="title-row"><div><div class="eyebrow">ACOUSTIC ARCHIVE</div><h1>听见来访者</h1><p class="subtitle">录音保存在本机；由你选择何时上传分析。</p></div><label class="secondary upload-label">＋ 导入 WAV<input id="import-file" type="file" accept=".wav,audio/wav" hidden></label></div>
+    <div class="archive-grid"><article class="panel archive-list"><div class="panel-top"><h3>录音文件</h3><span class="muted" id="archive-total">0 个</span></div><input id="search-recordings" placeholder="搜索文件名" aria-label="搜索录音"><div id="record-list"></div></article>
+      <div class="archive-detail"><article class="panel player-panel"><div class="panel-top"><span class="eyebrow">选中的录音</span><span class="badge">本地 WAV</span></div><h3 id="audio-name">选择一段声音</h3><p id="audio-meta" class="muted">可以选择历史录音，或导入16位PCM WAV文件。</p><canvas id="waveform" aria-label="录音波形预览"></canvas><audio id="audio-player" controls preload="metadata"></audio><div class="player-actions"><a id="download-audio" class="text-link" hidden>下载 WAV ↗</a><button id="classify" class="primary" disabled>上传并识别声音 ↗</button></div><p class="small-note">点击后将所选录音发送到设置中的服务。仅连接 ESP32 热点时通常无法访问云端。</p></article>
+      <article class="panel result-panel"><div class="panel-top"><h3>声音识别结果</h3><span class="badge amber">AI 候选 · 待核实</span></div><div id="result"><div class="result-empty">⌁<h3>声音里，还有待发现的线索</h3><p>配置 API 后，选择录音开始分析。<br>没有足够证据时，结果应保留为未知。</p></div></div><div class="result-footnote">保护对象：大袋鼯。候选范围不代表已训练或验证的物种识别能力；当前录音不能用于超声蝙蝠识别。</div></article></div>
+    </div>
+  </section>
+  <section id="settings" class="tab" hidden>
+    <div class="title-row"><div><div class="eyebrow">CONNECTION & INTELLIGENCE</div><h1>连接你的树屋</h1><p class="subtitle">设备接收与云端分析分别配置，录音始终留有本地副本。</p></div></div>
+    <form id="settings-form" class="settings-grid">
+      <article class="panel settings-panel"><div class="step-label">01 / 设备</div><h3>ESP32 热点连接</h3><label>设备 IP<input id="deviceHost" required value="192.168.4.1"></label><div class="instruction"><strong>HollowHaven-ESP32</strong><p>在 Windows 的 Wi-Fi 列表连接这个热点，再回到实时监测点击连接。</p><p>传感器端口 9000 · 音频端口 9001<br>暂不支持蓝牙接收。</p></div><h3 class="spaced">离线接收，联网识别</h3><p class="muted">只有一张无线网卡时：先接收录音 → 暂停设备连接 → 切回能上网的 Wi-Fi → 上传识别。若有以太网或第二张网卡，可同时使用。</p></article>
+      <article class="panel settings-panel"><div class="step-label">02 / 识别</div><h3>音频分析 API</h3><label>服务类型<select id="provider"><option value="gemini">Gemini · 音频理解</option><option value="custom">自定义 · WAV 分类接口</option></select></label><label id="model-field">模型名称<input id="model" required value="gemini-2.5-flash"></label><label id="endpoint-field" hidden>分类 API 地址<input id="endpoint" type="url" placeholder="https://your-service.example/classify"></label><p id="custom-help" class="small-note" hidden>POST原始WAV，Bearer鉴权；返回 [{label,score}] 或 {label,evidence,uncertainty}。其他接口格式需适配。</p><label>API 密钥<input id="apiKey" type="password" autocomplete="new-password" placeholder="仅保存在本次运行内存，不写入磁盘"></label><div class="key-row"><span id="key-state" class="muted">尚未配置密钥</span><label class="checkbox"><input id="clearKey" type="checkbox">清除已有密钥</label></div><label>候选类别与保护对象<textarea id="candidates" rows="7"></textarea></label><p class="small-note">候选类别作为 Gemini 分析背景；自定义模型使用其自身标签。通用音频模型不保证区分具体物种。</p><button type="submit" class="primary">保存设置</button><span id="settings-feedback" role="status"></span></article>
+    </form>
+  </section>
+  <footer><span>HOLLOWHAVEN · 观察，而不打扰</span><span>数据保存在这台电脑 · <span id="session-info">本地会话</span></span></footer>
+</main><div id="toast" role="status" hidden></div><script src="/app.js"></script></body></html>

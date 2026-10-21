@@ -1,128 +1,34 @@
-# Group Project Brief
+# HollowHaven — 树屋环境与声音监测
 
-## Project Overview
+围绕大袋鼯（Greater Glider）树洞庇护环境开展的原型项目。ESP32 采集环境和距离数据，在检测到近物体时录制声音；电脑接收数据，通过本地网页查看趋势、播放录音，并按需调用音频分析 API。
 
-As part of this course, students must complete a group project that integrates the concepts and skills learned throughout the semester. This project is worth 40% of the overall mark and is an opportunity to showcase the ability to design, build, and present a pervasive computing system grounded in ecological relationships.
+## 代码结构
 
-## Design Brief: Designing for a More-Than-Human Australia
-
-Australia is home to extraordinary ecological diversity and some of the world's most urgent environmental challenges. From the bleaching of the Great Barrier Reef to the collapse of old-growth forests, from the disruption of fire regimes to the disappearance of species that have shared this continent with people for tens of thousands of years, the relationships between humans and other living systems are under pressure.
-
-The challenge is to identify an Australian ecological situation and design a pervasive computing system that responds to it. The system should engage with the needs, experiences, or conditions of non-human actors, such as animals, plants, ecosystems, and species communities, rather than only the humans who interact with them.
-
-## Frameworks for Inspiration
-
-The following frameworks offer starting points. They do not need to be adopted wholesale and can be treated as lenses rather than constraints. Engaging seriously with at least one will deepen the intellectual ambition of the project. Guest speakers will introduce these frameworks in the first weeks of the semester, and a reading list is available on Canvas.
-
-- **Multispecies justice:** Extends frameworks of justice beyond humans. It asks which species are harmed or benefited by current systems and how design might redress that.
-- **More-than-human design:** Treats non-humans not just as context, but as potential participants in the design process itself.
-- **Country-centred design:** Draws on Indigenous Australian relational ontologies in which land, water, species, and people are entangled. This means designing with Country rather than for the environment.
-- **Animal-Computer Interaction (ACI):** A subfield of HCI focused on designing technology with and for animal participants.
-- **Solarpunk:** Imagines desirable ecological futures enabled by appropriate, community-scaled technology. It provides a generative aesthetic and ethical frame.
-
-## Objectives
-
-- Identify an Australian ecological challenge and construct a design challenge from a more-than-human perspective.
-- Build an interactive system using microcontrollers, sensors, actuators, and AI APIs that responds to that challenge.
-- Fabricate a custom enclosure whose form and materials reflect the ecological context of the project.
-- Apply HCI principles through physical, embodied, or ambient interaction rather than screen-based interfaces.
-- Incorporate context-recognition so the system adapts to what is happening around it.
-- Critically reflect on what it means to design technology for non-human participants.
-
-## Project Requirements
-
-### Group Formation
-
-- Groups may have up to 5 members. Groups larger than 5 are not permitted.
-- Having fewer members does not reduce the expected project scope.
-- All members must be enrolled in the same tutorial.
-- Designate a project manager to coordinate tasks and communication.
-- Aim for a group with diverse skills, experiences, and backgrounds.
-
-### Project Proposal
-
-**Due:** Week 4, 28 August
-
-Submit a 1-2 page proposal covering:
-
-- Challenge statement: the ecological situation being addressed and the non-human actors involved.
-- Non-human stakeholder analysis: who or what the non-human participants are, what they need, and how the system will infer or respond to those needs.
-- Project concept: how the system works and how it addresses the challenge.
-- Components: sensors, actuators, microcontrollers, and AI APIs planned for use.
-- Risks and open questions.
-- Preliminary timeline.
-
-Proposals must be approved before the project proceeds. Submit early, because earlier approval means more build time. Sketches may be attached without counting toward the page limit.
-
-### Design and Development
-
-- **Hardware:** Use at least one microcontroller, such as Arduino, ESP32, or Raspberry Pi. Include at least two types of sensors and at least one form of non-screen feedback, such as sound, haptics, light, or physical actuation.
-- **Screen constraint:** The system must not take the form of a website, mobile app, or screen-based interface. Incidental display use, such as a small LED matrix or e-ink panel used as output, may be acceptable with tutor approval. The primary interaction mode must be physical, embodied, or ambient.
-- **Software:** Write code to process sensor data, control actuators, and integrate AI APIs, such as speech recognition, image processing, or environmental data feeds. Emphasise context-recognition and adaptive responses.
-- **Enclosure:** Design and fabricate an enclosure using Fusion 360 or similar CAD software. Use 3D printing, laser cutting, or comparable fabrication techniques. The form and materiality of the enclosure should reflect the ecological context of the project. Consider where the device lives, who encounters it, and what it communicates by its presence.
-- **Usability:** Ensure the device is usable and applies HCI principles discussed in class, taking into account both human operators and the non-human context it inhabits.
-
-### Context-Recognition and Adaptation
-
-The system must recognise at least one aspect of its context, such as environmental conditions, species presence, time, weather, sound, or movement, and adapt its behaviour accordingly. The form factor is open: it may be a field device, wearable, domestic installation, or tangible interface.
-
-## Documentation
-
-The final submission should include:
-
-- **Technical report:** An Instructables-style report with enough detail for someone else to replicate the project. Include the design process, components, circuit diagrams, code, and challenges encountered.
-- **Inspiration references:** Three sections covering project motivation, design rationale, and technically similar projects. The motivation section should include ecological evidence or literature. The design rationale should include related work and evidence for the chosen approach.
-- **User manual:** Instructions for setting up, using, and troubleshooting the device. Consider who the human operator is and under what conditions they use it.
-- **Video:** A 3-5 minute video introducing the ecological motivation, showing the system working, and briefly reflecting on its more-than-human framing.
-- **Self-assessment rubric:** A completed project rubric as a group self-assessment, signed by all members before submission.
-
-## Final Presentation
-
-**Due:** Week 13, 2-6 November
-
-The final presentation is 5 minutes and should include:
-
-- A live demonstration of the device.
-- Discussion of the ecological challenge and design process.
-- Reflection on the more-than-human framing: who or what benefits, and how that is known.
-- Q&A with the audience.
-
-## Assessment Focus
-
-- **Innovation and creativity:** Originality of the concept, depth of engagement with the ecological challenge, and seriousness of the more-than-human framing.
-- **Technical implementation:** Functionality of hardware and software, including integration of sensors, actuators, AI APIs, and context-recognition.
-- **Design and fabrication:** Quality of the enclosure, effectiveness of CAD and fabrication, and appropriateness of form and material to the ecological context.
-- **Usability and HCI:** Application of HCI principles and quality of physical, embodied, or ambient interaction design.
-- **Documentation and presentation:** Clarity and completeness of the technical report and user manual, and quality of the video and final presentation.
-
-## Suggested Project Plan
-
-| Period | Focus | Milestone |
-| --- | --- | --- |
-| Weeks 1-2, 3-14 Aug | Attend framework lectures, explore the ecological challenge space, and form groups. | Groups confirmed by end of Week 2 |
-| Week 3, 17-21 Aug | Identify the challenge, draft the challenge statement, map non-human stakeholders, and begin component research. | Draft challenge statement |
-| Week 4, 24-28 Aug | Finalise and submit the proposal, and confirm components. | Proposal due 28 Aug |
-| Weeks 5-6, 31 Aug-11 Sep | Source components, build initial circuits, and begin sensing logic. | Core sensing functional |
-| Weeks 7-8, 14-25 Sep | Build a working prototype and begin enclosure design. | Working prototype and enclosure designed |
-| Mid-semester break | Continue planning, refinement, and preparation as needed. | - |
-| Week 9, 5-9 Oct | Present progress to the tutor, troubleshoot, and finalise enclosure design. | Mid-project check-in |
-| Weeks 10-11, 12-23 Oct | Fabricate the enclosure, integrate the system, and test and iterate. | Fully integrated, enclosed system |
-| Weeks 11-12, 19-30 Oct | Write the report, film the video, complete the user manual, and sign the rubric. | All documentation complete |
-| Week 13, 2-6 Nov | Final presentations and demonstration. | Presentation |
-
-## Important Dates
-
-| Milestone | Date |
+| 文件夹 | 内容 |
 | --- | --- |
-| Project Proposal | Week 4, 28 August |
-| Mid-project Check-in | Week 9, 5-9 October |
-| Final Presentation | Week 13, 2-6 November |
+| [project/](project/README.md) | ESP32 C 固件、共享协议、原生 C 接收器与测试 |
+| [website/](website/README.md) | Node.js 本地服务、HTML/CSS/JavaScript 页面、API 接口与测试 |
 
-## Required Resources
+[Draft.md](Draft.md) 保留项目提案，[COURSE_BRIEF.md](COURSE_BRIEF.md) 保留原课程说明。网页是原型调试与研究数据查看工具。
 
-- **Electronics:** Ask the tutor about borrowing components. Components may also be purchased from Core Electronics, Jaycar, or Little Bird.
-- **3D printers and laser cutters:** Available in the maker space. Arrange access with the tutor.
-- **Fusion 360:** Free student licence available from Autodesk.
-- **AI APIs:** Refer to workshop materials for guidance on integrating speech recognition, image processing, and environmental data APIs.
+## 快速开始
 
-This project is a chance to build something that is technically, ecologically, and intellectually significant. Work collaboratively, think beyond the human, and let the complexity of Australia's ecological situation inspire the project.
+1. 按 [硬件 README](project/README.md) 接线，在 VS Code PlatformIO 中打开 project/firmware，编译并上传。
+2. 安装 Node.js（最低 18，建议使用受支持的 LTS），进入 website，运行 node server.js；Windows 也可双击 website/HollowHaven.cmd。无需 npm install。
+3. 电脑连接 HollowHaven-ESP32 热点，打开 http://127.0.0.1:8765，点击连接 ESP32。
+4. 在声音档案中播放录音；需要识别时配置 API，切换到可上网的网络，再手动上传选中的录音。
+
+## 当前能力与边界
+
+- 四个传感器：SHT3x 温湿度、电容式吸水层湿度、VL53L0X 距离、SEN0487 模拟麦克风。
+- 距离触发约 30 秒录音；二进制传输带 CRC32，保存成功后确认接收。
+- AI 候选类别包含大袋鼯、其他负鼠/袋鼯、鸟类、昆虫、环境声和未知。尚未验证物种识别准确率；红外遮挡也不等于确认动物身份。
+- 当前声音采样约 8192 Hz，不能用于完整的蝙蝠超声识别。
+- 吸水层 ADC 是原始值；降温结构及自动阀门控制仍需实验验证，本版本未实现闭环水流控制。
+- 网页仅本机访问，未启用局域网共享或公网部署。
+
+## 验证和数据
+
+网页测试：在 website 执行 node --test test.js。C 接收器和状态逻辑测试见 project/README.md。模拟测试不能替代真实传感器、网络与动物声音效果验证。
+
+录音、运行数据、API 密钥、驱动安装包、构建缓存均不提交。API 密钥只在本地服务进程内存保存。固件包含演示热点密码，实际部署前请修改。第三方 VL53L0X 驱动保留原许可证及来源说明，见 project/firmware/components/st_tof/PROVENANCE.md。
