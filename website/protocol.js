@@ -1,9 +1,12 @@
 'use strict';
-const COLUMNS='version,boot_id,sequence,uptime_ms,inside_temp_c,inside_rh_pct,outside_temp_c,wick_raw,light_raw,water_raw,valid_mask,sound_rms,sound_p2p,sound_samples,sound_clipped,adc_overflows,distance_mm,animal_present,presence_valid,audio_recording'.split(',');
-const GREETING='#HOLLOWHAVEN/3 '+COLUMNS.join(',');
+const LEGACY_COLUMNS='version,boot_id,sequence,uptime_ms,inside_temp_c,inside_rh_pct,outside_temp_c,wick_raw,light_raw,water_raw,valid_mask,sound_rms,sound_p2p,sound_samples,sound_clipped,adc_overflows,distance_mm,animal_present,presence_valid,audio_recording'.split(',');
+const COLUMNS=[...LEGACY_COLUMNS,'wick2_raw','wick2_valid','moisture1_state','moisture2_state','valve_state','valve_pulse_us','valve_open_ms','outlet_blocked'];
+const GREETING='#HOLLOWHAVEN/4 '+COLUMNS.join(',');
+const LEGACY_GREETING='#HOLLOWHAVEN/3 '+LEGACY_COLUMNS.join(',');
 function parseSample(line){
   const fields=line.trim().split(',');
-  if(fields.length!==20||fields[0]!=='3')throw Error('不兼容的传感器数据，需使用v3固件');
+  const v4=fields[0]==='4'&&fields.length===28;
+  if(!v4 && !(fields.length===20&&fields[0]==='3'))throw Error('不兼容的传感器数据，需使用v4固件');
   const s={};
   fields.forEach((v,i)=>{
     if(v==='nan'&&[4,5,6,11].includes(i))s[COLUMNS[i]]=null;
@@ -20,6 +23,16 @@ function parseSample(line){
   check('wick_raw',4,0,4095,-1);check('light_raw',8,0,4095,-1);check('water_raw',16,0,4095,-1);
   check('sound_rms',32,0,4095);check('sound_p2p',32,0,4095,-1);check('distance_mm',64,1,2000,-1);
   if(!!(s.valid_mask&64)!==!!s.presence_valid||!!(s.valid_mask&32)!==(s.sound_samples>0))throw Error('有效标志不一致');
+  if(v4){
+    for(const key of COLUMNS.slice(20))if(!Number.isSafeInteger(s[key]))throw Error('扩展状态无效');
+    if(![0,1].includes(s.wick2_valid)||![0,1].includes(s.outlet_blocked))throw Error('扩展布尔值无效');
+    if(s.wick2_valid ? s.wick2_raw<0||s.wick2_raw>4095 : s.wick2_raw!==-1)throw Error('第二路湿度无效');
+    if(![0,1,2].includes(s.moisture1_state)||![0,1,2].includes(s.moisture2_state)||
+       (!(s.valid_mask&4)&&s.moisture1_state)||(!s.wick2_valid&&s.moisture2_state))throw Error('湿润状态无效');
+    if(s.valve_state<0||s.valve_state>4||s.valve_pulse_us<0||s.valve_pulse_us>=20000||s.valve_open_ms<0||s.valve_open_ms>0xffffffff)throw Error('阀门状态无效');
+    if(s.valve_state!==3&&s.valve_open_ms!==0)throw Error('开阀计时无效');
+    if(s.outlet_blocked&&(s.valve_state!==3||s.valve_open_ms<60000||![s.moisture1_state,s.moisture2_state].includes(1)))throw Error('堵塞状态无效');
+  }else Object.assign(s,{wick2_raw:-1,wick2_valid:0,moisture1_state:0,moisture2_state:0,valve_state:0,valve_pulse_us:0,valve_open_ms:0,outlet_blocked:0});
   return {...s,received_at:Date.now()};
 }
 function crc32(data){
@@ -69,4 +82,4 @@ function normalizeResult(value){
   return {label:value.label.slice(0,150),evidence:String(value.evidence||'未提供声音依据').slice(0,3000),
     uncertainty:String(value.uncertainty||'需人工核实').slice(0,1500),predictions:[]};
 }
-module.exports={COLUMNS,GREETING,parseSample,crc32,audioHeader,makeWav,wavInfo,normalizeResult};
+module.exports={COLUMNS,GREETING,LEGACY_GREETING,parseSample,crc32,audioHeader,makeWav,wavInfo,normalizeResult};

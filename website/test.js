@@ -1,6 +1,30 @@
 'use strict';
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),net=require('node:net'),http=require('node:http'),{spawn}=require('node:child_process');
 const {GREETING,parseSample,crc32,audioHeader,makeWav,wavInfo,normalizeResult}=require('./protocol');
+const {sensorStatusView}=require('./public/control-view');
+test('status bar thresholds, both cloth sensors, valve state and stale alarms',()=>{
+  const s={version:4,valid_mask:28,water_raw:49,light_raw:499,wick_raw:2400,wick2_raw:1800,wick2_valid:1,moisture1_state:1,moisture2_state:2,valve_state:3,valve_pulse_us:1200,valve_open_ms:60000,outlet_blocked:1};
+  const v=sensorStatusView(s,false);
+  assert.match(v.water.value,/小于50ml/);assert.equal(v.sun.value,'太阳直射');
+  assert.equal(v.left1.value,'干燥');assert.equal(v.left2.value,'湿润');assert.equal(v.valve.value,'打开');
+  assert.deepEqual(v.alerts.map(a=>a.title),['需要补水维护','出水口堵塞']);
+  assert.match(v.left1.detail,/2400/);assert.match(v.left2.detail,/1800/);
+  assert.equal(sensorStatusView({...s,water_raw:50},false).water.value,'暂不需要补水');
+  assert.equal(sensorStatusView({...s,light_raw:500},false).sun.value,'未达到直射阈值');
+  assert.equal(sensorStatusView({...s,valid_mask:0,wick2_valid:0,moisture1_state:0,moisture2_state:0,outlet_blocked:0},false).alerts.length,0);
+  assert.equal(sensorStatusView(s,true).alerts.length,0);assert.equal(sensorStatusView(s,true).valve.value,'未知');
+  assert.equal(sensorStatusView({...s,version:3},false).valve.value,'未知');
+});
+test('v4 telemetry validates extended fields and blockage consistency',()=>{
+  const row4='4,123,1,80000,32,60,nan,2400,199,49,29,nan,-1,0,0,0,-1,0,0,0,1800,1,1,2,3,1200,60000,1';
+  const s=parseSample(row4);assert.equal(s.wick2_raw,1800);assert.equal(s.valve_open_ms,60000);
+  for(const bad of [row4.replace(',60000,1',',59999,1'),row4.replace(',3,1200,',',1,1200,'),row4.replace(',1800,1,1,2',',1800,0,1,2'),row4+',0'])assert.throws(()=>parseSample(bad));
+});
+test('enabled light and water retain raw ADC values including zero',()=>{
+  const sample=parseSample('3,123,1,2000,31.50,61.25,nan,2600,0,4095,125,15.50,120,16384,0,0,180,1,1,1');
+  assert.equal(sample.light_raw,0);assert.equal(sample.water_raw,4095);
+  assert.throws(()=>parseSample('3,123,1,2000,31.50,61.25,nan,2600,0,4096,125,15.50,120,16384,0,0,180,1,1,1'));
+});
 const row='3,123,1,2000,24.50,61.25,nan,2600,-1,-1,101,15.50,120,16384,0,0,180,1,1,1';
 test('telemetry preserves invalid/unknown semantics and validates values',()=>{
   assert.equal(parseSample(row).distance_mm,180);
@@ -43,6 +67,10 @@ test('end-to-end TCP, CRC retry, persistence-before-ACK, local API and classific
     const base='http://127.0.0.1:'+webPort;let state;
     for(let i=0;i<50;i++){try{state=await(await fetch(base+'/api/state')).json();break;}catch{await delay(100);}}
     assert.ok(state,output);
+    const html=await(await fetch(base+'/')).text();
+    assert.ok(html.includes('id="status-left2"')&&html.includes('id="status-water"')&&html.includes('id="status-valve"'));
+    const viewScript=await fetch(base+'/control-view.js');assert.equal(viewScript.status,200);
+    assert.match(await viewScript.text(),/function sensorStatusView/);
     const post=(url,value,token=state.csrf)=>fetch(base+url,{method:'POST',headers:{'Content-Type':'application/json','X-HH-Token':token},body:JSON.stringify(value||{})});
     assert.equal((await post('/api/connect',{},'wrong')).status,403);
     const cfg={...state.config,deviceHost:'127.0.0.1',provider:'custom',endpoint:'http://127.0.0.1:'+apiPort,apiKey:'test-only-secret'};
@@ -58,7 +86,9 @@ test('end-to-end TCP, CRC retry, persistence-before-ACK, local API and classific
     assert.equal(JSON.parse(fs.readFileSync(path.join(data,'results.json')))[file].label,'未知');
     const partial=await fetch(base+'/api/audio?name='+file,{headers:{Range:'bytes=0-43'}});assert.equal(partial.status,206);assert.equal((await partial.arrayBuffer()).byteLength,44);
     assert.equal((await fetch(base+'/api/audio?name=..%2Fserver.js')).status,400);
-    const csv=await(await fetch(base+'/api/export')).text();assert.ok(csv.includes('distance_mm,animal_present'));assert.ok(csv.includes(row));
+    const csv=await(await fetch(base+'/api/export')).text();assert.ok(csv.includes('distance_mm,animal_present'));
+    const exported=parseSample(csv.trim().split('\n')[1].split(',').slice(1).join(','));
+    assert.equal(exported.inside_temp_c,24.5);assert.equal(exported.sequence,1);assert.equal(exported.valve_state,0);
     await post('/api/disconnect');state=await(await fetch(base+'/api/state')).json();assert.equal(state.stale,true);
   }finally{
     if(child){child.kill();await new Promise(r=>{child.once('exit',r);setTimeout(r,1000).unref();});}

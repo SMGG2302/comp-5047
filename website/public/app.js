@@ -43,11 +43,12 @@ function render(){
   $('connection-badge').textContent=!state.wanted?'未连接设备':stale?'等待设备数据':'设备在线';
   $('connection-badge').className='badge'+(!stale?' green':'');
   document.querySelector('.connect-button').textContent=state.wanted?'暂停接收':'连接 ESP32';
-  $('network-title').textContent=!state.wanted?'本地工作空间 · 接收已暂停':stale?'正在等待 ESP32，请检查热点连接':'正在接收树屋数据';
+  $('network-title').textContent=!state.wanted?'本地工作空间 · 接收已暂停':stale?'正在等待 ESP32，请检查路由器连接':'正在接收树屋数据';
   const audioStatus={connected:'音频通道已连接',connecting:'音频通道连接中',retrying:'音频通道重连中',disconnected:'音频通道未连接'}[state.statuses.audio];
-  $('network-detail').textContent=!state.wanted?'先将电脑连接到 HollowHaven-ESP32 热点，再点击连接。历史录音仍可播放和分析。':stale?'正在自动重试 '+state.config.deviceHost+'。请确认电脑连接 ESP32 热点，且没有其他接收程序占用设备。':audioStatus+' · 新录音保存到本机 · 最后更新 '+time(s.received_at);
+  $('network-detail').textContent=!state.wanted?'电脑与 ESP32 连接同一路由器，再点击连接。':stale?'正在'+(state.deviceAddress?'重连 '+state.deviceAddress:'自动发现 ESP32')+'。请确认路由器2.4GHz网络可用、设备已上电，且未开启客户端隔离。':audioStatus+' · 设备 '+state.deviceAddress+' · 最后更新 '+time(s.received_at);
   displayMetric('temperature','inside_temp_c',1,2);displayMetric('humidity','inside_rh_pct',1,1);
-  displayMetric('wick','wick_raw',4,0);displayMetric('distance','distance_mm',64,0);
+  displayMetric('distance','distance_mm',64,0);
+  renderSensorStatus(s,stale);
   displayMetric('sound-rms','sound_rms',32,1);displayMetric('sound-p2p','sound_p2p',32,0);displayMetric('sound-clipped','sound_clipped',32,0);
   const valid=!stale&&s?.presence_valid,occupied=valid&&s.animal_present;
   $('presence-badge').textContent=!valid?'状态未知':occupied?'疑似占用':'监测区空闲';
@@ -69,6 +70,30 @@ function render(){
   $('classify').textContent=busy||state.activeJob?'识别中，请稍候…':'上传并识别声音 ↗';
   renderResult();if(activeTab==='overview')drawTrend();
 }
+const acknowledgedAlerts=new Set();
+let alarmBoot=null;
+function renderSensorStatus(sample,stale){
+  const view=sensorStatusView(sample,stale);
+  for(const key of ['water','sun','valve','left1','left2']){
+    const value=view[key],el=$('status-'+key);
+    el.className='status-item '+value.tone;el.title=value.detail;
+    el.setAttribute('aria-label',value.label+'：'+value.value+'。'+value.detail);
+    el.querySelector('strong').textContent=value.value;
+    el.querySelector('.status-tooltip').textContent=value.detail;
+  }
+  $('maintenance-alerts').innerHTML=view.alerts.map(a=>'<div class="maintenance-alert"><strong>'+escapeHTML(a.title)+'</strong><span>'+escapeHTML(a.detail)+'</span></div>').join('');
+  $('maintenance-alerts').hidden=!view.alerts.length;
+  if(stale||!sample){if($('maintenance-dialog').open)$('maintenance-dialog').close();return;}
+  if(alarmBoot!==sample.boot_id){acknowledgedAlerts.clear();alarmBoot=sample.boot_id;}
+  for(const id of [...acknowledgedAlerts])if(!view.alerts.some(a=>a.id===id))acknowledgedAlerts.delete(id);
+  const fresh=view.alerts.filter(a=>!acknowledgedAlerts.has(a.id));
+  if(fresh.length){
+    $('maintenance-dialog-body').innerHTML=fresh.map(a=>'<h3>'+escapeHTML(a.title)+'</h3><p>'+escapeHTML(a.detail)+'</p>').join('');
+    for(const alert of fresh)acknowledgedAlerts.add(alert.id);
+    if(!$('maintenance-dialog').open)$('maintenance-dialog').showModal();
+  }else if(!view.alerts.length&&$('maintenance-dialog').open)$('maintenance-dialog').close();
+}
+$('dismiss-maintenance').onclick=()=>$('maintenance-dialog').close();
 function renderRecords(){
   const q=$('search-recordings').value.toLowerCase();
   const rows=state.records.filter(r=>r.name.toLowerCase().includes(q));
@@ -114,7 +139,7 @@ function canvasContext(id){
 }
 function drawTrend(){
   const canvas=canvasContext('trend');if(!canvas)return;const {ctx,width:w,height:h}=canvas;const metric=$('metric').value;
-  const rows=state?.history||[],bit={inside_temp_c:1,inside_rh_pct:1,wick_raw:4,distance_mm:64,sound_rms:32}[metric];
+  const rows=state?.history||[],bit={inside_temp_c:1,inside_rh_pct:1,wick_raw:4,light_raw:8,water_raw:16,distance_mm:64,sound_rms:32}[metric];
   const vals=rows.filter(r=>(r.valid_mask&bit)&&r[metric]!==null).map(r=>r[metric]);ctx.font='10px Segoe UI';ctx.fillStyle='#9ba692';
   if(!vals.length){ctx.textAlign='center';ctx.fillText('等待真实传感器数据',w/2,h/2);return;}
   let low=Math.min(...vals),high=Math.max(...vals),margin=Math.max((high-low)*.15,metric==='inside_temp_c'?1:2);low-=margin;high+=margin;

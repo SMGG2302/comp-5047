@@ -1,6 +1,7 @@
 param([switch]$NoBrowser)
 $ErrorActionPreference = 'Stop'
-$url = 'http://127.0.0.1:8765'
+$env:HH_PORT = '8766'
+$url = 'http://127.0.0.1:8766'
 $running = $false
 try {
     $state = Invoke-RestMethod "$url/api/state" -TimeoutSec 2

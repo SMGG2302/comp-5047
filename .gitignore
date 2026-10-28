@@ -16,4 +16,5 @@ website/data/
 *.pid
 .env
 .env.*
+project/firmware/main/wifi_credentials.h
 project/experiment_*.csv

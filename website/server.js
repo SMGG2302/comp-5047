@@ -1,15 +1,17 @@
 'use strict';
 const http=require('node:http'),net=require('node:net'),fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
-const {COLUMNS,GREETING,parseSample,crc32,audioHeader,makeWav,wavInfo,normalizeResult}=require('./protocol');
+const {COLUMNS,GREETING,LEGACY_GREETING,parseSample,crc32,audioHeader,makeWav,wavInfo,normalizeResult}=require('./protocol');
+const dgram=require('node:dgram'),os=require('node:os');
 const ROOT=path.resolve(__dirname,'..'),DATA=process.env.HH_DATA_DIR||path.join(__dirname,'data'),RECORDINGS=process.env.HH_RECORDINGS_DIR||path.join(__dirname,'recordings');
 fs.mkdirSync(DATA,{recursive:true});fs.mkdirSync(RECORDINGS,{recursive:true});
-const PORT=Number(process.env.HH_PORT||8765),csrf=crypto.randomBytes(24).toString('hex');
-const initial={deviceHost:'192.168.4.1',provider:'gemini',model:'gemini-2.5-flash',endpoint:'',
+const PORT=Number(process.env.HH_PORT||8766),csrf=crypto.randomBytes(24).toString('hex');
+const initial={deviceHost:'auto',provider:'gemini',model:'gemini-2.5-flash',endpoint:'',
   candidates:'大袋鼯 Greater glider (Petauroides volans)\n其他负鼠 / 袋鼯\n鸟类 / 鹦鹉\n蝙蝠（仅可听声音）\n昆虫\n人声\n环境噪声 / 无明显动物声\n未知'};
 let config={...initial};
 try{const c=JSON.parse(fs.readFileSync(path.join(DATA,'settings.json'),'utf8'));for(const k of Object.keys(initial))if(typeof c[k]==='string')config[k]=c[k];}catch{}
 let apiKey='',wanted=false,generation=0,sockets=[],timers=[],latest=null,lastKey='',history=[],events=[],resultCache={};
 let statuses={telemetry:'disconnected',audio:'disconnected'},activeJob=null,server;
+let discoveredHost=null,discovery=null,discoveryTimer=null;
 const startedAt=Date.now(),session='session_'+new Date().toISOString().replace(/[:.]/g,'-')+'.csv';
 const csvPath=path.join(DATA,session);fs.writeFileSync(csvPath,'received_utc,'+COLUMNS.join(',')+'\n');
 try{resultCache=JSON.parse(fs.readFileSync(path.join(DATA,'results.json'),'utf8'));}catch{}
@@ -29,8 +31,8 @@ function recordList(){
 }
 function retry(fn,id){if(wanted&&id===generation){const t=setTimeout(()=>{timers=timers.filter(x=>x!==t);if(wanted&&id===generation)fn(id);},2500);timers.push(t);}}
 function socketFor(port,id,kind){
-  const sock=net.createConnection({host:config.deviceHost,port});sockets.push(sock);statuses[kind]='connecting';
-  const timeout=setTimeout(()=>sock.destroy(Error('连接设备超时，请连接ESP32热点')),6000);
+  const sock=net.createConnection({host:config.deviceHost==='auto'?discoveredHost:config.deviceHost,port});sockets.push(sock);statuses[kind]='connecting';
+  const timeout=setTimeout(()=>sock.destroy(Error('连接设备超时，请确认电脑和ESP32连接同一路由器')),6000);
   sock.once('connect',()=>{clearTimeout(timeout);statuses[kind]='connected';sock.setKeepAlive(true,5000);event(kind==='audio'?'音频通道已连接，等待事件录音':'传感器通道已连接');});
   sock.on('error',()=>{});sock.once('close',()=>{clearTimeout(timeout);sockets=sockets.filter(s=>s!==sock);if(id===generation)statuses[kind]=wanted?'retrying':'disconnected';});
   return sock;
@@ -44,13 +46,13 @@ function telemetryConnect(id){
     for(let index;(index=buf.indexOf('\n'))>=0;){
       const line=buf.slice(0,index).replace(/\r$/,'');buf=buf.slice(index+1);
       try{
-        if(!greeted){if(line!==GREETING)throw Error('固件协议不匹配，需要v3');greeted=true;continue;}
+        if(!greeted){if(line!==GREETING&&line!==LEGACY_GREETING)throw Error('固件协议不匹配，需要v4');greeted=true;continue;}
         const s=parseSample(line),key=s.boot_id+':'+s.sequence;if(key===lastKey)continue;
         if(latest&&s.boot_id===latest.boot_id&&s.sequence!==latest.sequence+1)event('传感器记录存在序号间隔','warn');
         if(latest&&s.boot_id!==latest.boot_id)event('ESP32已重新启动','warn');
         if(s.presence_valid&&(!latest||!latest.presence_valid||s.animal_present!==latest.animal_present))event(s.animal_present?'红外检测到近物体，标记为疑似占用':'红外确认监测区域已空闲');
         if(s.audio_recording&&(!latest||!latest.audio_recording))event('ESP32正在录制30秒事件音频');
-        fs.appendFileSync(csvPath,new Date(s.received_at).toISOString()+','+line+'\n');
+        fs.appendFileSync(csvPath,new Date(s.received_at).toISOString()+','+COLUMNS.map(k=>k==='version'?4:s[k]===null?'nan':s[k]).join(',')+'\n');
         lastKey=key;latest=s;history.push(s);history=history.slice(-900);
       }catch(e){event(e.message,'error');if(!greeted){sock.destroy();break;}}
     }
@@ -80,10 +82,39 @@ function audioConnect(id){
 }
 function disconnect(){
   wanted=false;generation++;for(const t of timers)clearTimeout(t);timers=[];for(const s of sockets)s.destroy();sockets=[];
+  if(discoveryTimer)clearInterval(discoveryTimer);discoveryTimer=null;
+  if(discovery)discovery.close();discovery=null;
   statuses={telemetry:'disconnected',audio:'disconnected'};
 }
 function connect(){
-  disconnect();wanted=true;const id=generation;telemetryConnect(id);audioConnect(id);event('开始连接 '+config.deviceHost);
+  disconnect();wanted=true;
+  if(config.deviceHost==='auto'){discoveredHost=null;startDiscovery();event('正在局域网中发现 ESP32');}
+  else {const id=generation;telemetryConnect(id);audioConnect(id);event('开始连接 '+config.deviceHost);}
+}
+function startDiscovery(){
+  const udp=discovery=dgram.createSocket('udp4');
+  udp.on('error',()=>event('自动发现暂不可用，可在设置中填写串口显示的设备IP','warn'));
+  udp.on('message',(message,peer)=>{
+    if(!wanted||config.deviceHost!=='auto'||message.toString()!=='HH_DEVICE/4'||!privateIPv4(peer.address))return;
+    if(discoveredHost===peer.address)return;
+    if(statuses.telemetry==='connected'&&latest&&Date.now()-latest.received_at<6000)return;
+    generation++;for(const timer of timers)clearTimeout(timer);timers=[];for(const s of sockets)s.destroy();sockets=[];
+    discoveredHost=peer.address;event('已发现 ESP32：'+discoveredHost);
+    telemetryConnect(generation);audioConnect(generation);
+  });
+  udp.bind(0,'0.0.0.0',()=>{
+    udp.setBroadcast(true);
+    const probe=()=>{
+      const destinations=new Set(['255.255.255.255']);
+      for(const entries of Object.values(os.networkInterfaces()))for(const entry of entries||[]){
+        if(entry.family!=='IPv4'||entry.internal)continue;
+        const address=entry.address.split('.').map(Number),mask=entry.netmask.split('.').map(Number);
+        destinations.add(address.map((n,i)=>(n|(~mask[i]&255))).join('.'));
+      }
+      for(const address of destinations)udp.send('HH_DISCOVER/4',9002,address,()=>{});
+    };
+    probe();discoveryTimer=setInterval(probe,5000);
+  });
 }
 async function body(req,limit=16384){
   const chunks=[];let n=0;for await(const c of req){n+=c.length;if(n>limit)throw Error('请求或文件过大');chunks.push(c);}return Buffer.concat(chunks);
@@ -96,7 +127,7 @@ function endpointURL(value){
   return u;
 }
 function saveConfig(c){
-  if(!privateIPv4(c.deviceHost))throw Error('设备地址必须为局域网IPv4地址');
+  if(c.deviceHost!=='auto'&&!privateIPv4(c.deviceHost))throw Error('设备地址需为auto或局域网IPv4地址');
   if(!['gemini','custom'].includes(c.provider))throw Error('未知服务类型');
   if(!/^[\w.-]{1,100}$/.test(c.model))throw Error('模型名无效');
   if(typeof c.candidates!=='string'||!c.candidates.trim()||c.candidates.length>4000)throw Error('请填写候选类别（最多4000字符）');
@@ -162,7 +193,7 @@ async function handle(req,res){
   }
   try{
     if(req.method==='GET'&&u.pathname==='/api/state')return json(res,200,{
-      csrf,config:{...config,hasKey:!!apiKey},wanted,statuses,latest,history,events,records:recordList(),activeJob,startedAt,session,
+      csrf,config:{...config,hasKey:!!apiKey},deviceAddress:config.deviceHost==='auto'?discoveredHost:config.deviceHost,wanted,statuses,latest,history,events,records:recordList(),activeJob,startedAt,session,
       stale:!latest||!wanted||statuses.telemetry!=='connected'||Date.now()-latest.received_at>6000});
     if(req.method==='GET'&&u.pathname==='/api/audio-info')return json(res,200,wavInfo(fs.readFileSync(filePath(u.searchParams.get('name')))));
     if(req.method==='GET'&&u.pathname==='/api/audio'){
@@ -185,7 +216,7 @@ async function handle(req,res){
       if(u.pathname==='/api/settings'){saveConfig(data);return json(res,200,{ok:true});}
       if(u.pathname==='/api/classify')return json(res,200,await classify(data.name));
     }
-    const assets={'/':['index.html','text/html'],'/app.js':['app.js','text/javascript'],'/style.css':['style.css','text/css']};
+    const assets={'/':['index.html','text/html'],'/app.js':['app.js','text/javascript'],'/control-view.js':['control-view.js','text/javascript'],'/style.css':['style.css','text/css'],'/status.css':['status.css','text/css']};
     if(req.method==='GET'&&assets[u.pathname]){const [f,type]=assets[u.pathname];res.writeHead(200,{'Content-Type':type+'; charset=utf-8'});return res.end(fs.readFileSync(path.join(__dirname,'public',f)));}
     json(res,404,{error:'未找到资源'});
   }catch(e){if(!res.headersSent)json(res,400,{error:e.message});else res.end();}

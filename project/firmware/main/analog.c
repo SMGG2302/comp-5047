@@ -19,10 +19,10 @@
 #endif
 static adc_continuous_handle_t adc;
 static SemaphoreHandle_t lock;
-static int channels[4];
+static int channels[5];
 typedef struct {
-    uint64_t sum[4], sound_squares;
-    uint32_t count[4], clipped;
+    uint64_t sum[5], sound_squares;
+    uint32_t count[5], clipped;
     unsigned low, high;
 } window_t;
 static window_t window;
@@ -62,7 +62,7 @@ static void adc_task(void *arg)
         for (uint32_t i = 0; i + SOC_ADC_DIGI_RESULT_BYTES <= length; i += SOC_ADC_DIGI_RESULT_BYTES) {
             const adc_digi_output_data_t *r = (const void *)(buffer + i);
             unsigned channel = r->type1.channel, value = r->type1.data;
-            for (int j = 0; j < 4; ++j) {
+            for (int j = 0; j < 5; ++j) {
                 if (channel != (unsigned)channels[j]) continue;
                 window.sum[j] += value;
                 ++window.count[j];
@@ -88,11 +88,11 @@ static void adc_task(void *arg)
 
 void hh_analog_init(void)
 {
-    const int pins[4] = {HH_WICK_GPIO, HH_LIGHT_GPIO, HH_WATER_GPIO, HH_SOUND_GPIO};
-    adc_digi_pattern_config_t pattern[4] = {0};
-    const bool enabled[4]={HH_ENABLE_WICK,HH_ENABLE_LIGHT,HH_ENABLE_WATER,HH_ENABLE_SOUND};
+    const int pins[5] = {HH_WICK_GPIO, HH_LIGHT_GPIO, HH_WATER_GPIO, HH_SOUND_GPIO, HH_WICK2_GPIO};
+    adc_digi_pattern_config_t pattern[8] = {0};
+    const bool enabled[5]={HH_ENABLE_WICK,HH_ENABLE_LIGHT,HH_ENABLE_WATER,HH_ENABLE_SOUND,HH_ENABLE_WICK2};
     unsigned count=0;
-    for (int j = 0; j < 4; ++j) {
+    for (int j = 0; j < 5; ++j) {
         channels[j]=-1;
         if(!enabled[j])continue;
         adc_unit_t unit;
@@ -105,6 +105,21 @@ void hh_analog_init(void)
         pattern[count].unit = unit;
         pattern[count].bit_width = SOC_ADC_DIGI_MAX_BITWIDTH;
         ++count;
+    }
+    /* Interleave one microphone sample with each slow sensor. Keep the same
+     * 50% microphone share and uniform spacing as the original two-channel scan. */
+    if (HH_ENABLE_SOUND && count > 1) {
+        adc_digi_pattern_config_t slow[4], microphone = {0};
+        unsigned slow_count = 0;
+        for (unsigned i = 0; i < count; ++i) {
+            if (pattern[i].channel == channels[3]) microphone = pattern[i];
+            else slow[slow_count++] = pattern[i];
+        }
+        count = 0;
+        for (unsigned i = 0; i < slow_count; ++i) {
+            pattern[count++] = microphone;
+            pattern[count++] = slow[i];
+        }
     }
     lock = xSemaphoreCreateMutex();
     assert(lock);
@@ -138,6 +153,10 @@ void hh_analog_snapshot(hh_sample_t *s)
             s->valid_mask |= flags[j];
         }
     }
+    s->wick2_raw = -1;
+    s->wick2_valid = HH_ENABLE_WICK2 && w.count[4] > 0;
+    if (s->wick2_valid)
+        s->wick2_raw = (int)((w.sum[4] + w.count[4] / 2) / w.count[4]);
     if (HH_ENABLE_SOUND && w.count[3]) {
         double mean = (double)w.sum[3] / w.count[3];
         double variance = (double)w.sound_squares / w.count[3] - mean * mean;

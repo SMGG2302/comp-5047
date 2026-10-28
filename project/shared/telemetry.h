@@ -6,7 +6,7 @@
 #include <stdint.h>
 
 #define HH_LINE_CAP 384
-#define HH_VERSION 3
+#define HH_VERSION 4
 #define HH_VALID_SHT 1u
 #define HH_VALID_DS18B20 2u
 #define HH_VALID_WICK 4u
@@ -15,8 +15,9 @@
 #define HH_VALID_SOUND 32u
 #define HH_VALID_TOF 64u
 #define HH_VALID_ALL 127u
-#define HH_COLUMNS "version,boot_id,sequence,uptime_ms,inside_temp_c,inside_rh_pct,outside_temp_c,wick_raw,light_raw,water_raw,valid_mask,sound_rms,sound_p2p,sound_samples,sound_clipped,adc_overflows,distance_mm,animal_present,presence_valid,audio_recording"
-#define HH_GREETING "#HOLLOWHAVEN/3 " HH_COLUMNS
+#define HH_COLUMNS "version,boot_id,sequence,uptime_ms,inside_temp_c,inside_rh_pct,outside_temp_c,wick_raw,light_raw,water_raw,valid_mask,sound_rms,sound_p2p,sound_samples,sound_clipped,adc_overflows,distance_mm,animal_present,presence_valid,audio_recording,wick2_raw,wick2_valid,moisture1_state,moisture2_state,valve_state,valve_pulse_us,valve_open_ms,outlet_blocked"
+#define HH_GREETING "#HOLLOWHAVEN/4 " HH_COLUMNS
+enum { HH_VALVE_UNKNOWN, HH_VALVE_CLOSED, HH_VALVE_OPENING, HH_VALVE_OPEN, HH_VALVE_CLOSING };
 
 typedef struct {
     uint32_t boot_id;
@@ -26,6 +27,8 @@ typedef struct {
     float inside_rh_pct;
     float outside_temp_c;
     int wick_raw;
+    int wick2_raw;
+    bool wick2_valid;
     int light_raw;
     int water_raw;
     unsigned valid_mask;
@@ -34,6 +37,10 @@ typedef struct {
     uint32_t sound_samples, sound_clipped, adc_overflows;
     int distance_mm;
     bool animal_present, presence_valid, audio_recording;
+    unsigned moisture1_state, moisture2_state;
+    unsigned valve_state, valve_pulse_us;
+    uint32_t valve_open_ms;
+    bool outlet_blocked;
 } hh_sample_t;
 
 /* Invalid floating readings are NAN, invalid ADC readings are -1. */

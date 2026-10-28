@@ -27,6 +27,12 @@ int main(void)
     CHECK(decoded.inside_temp_c == 32.5f && decoded.water_raw == 1400);
     CHECK(decoded.sound_rms == 12.5f && decoded.sound_samples == 10000 && decoded.sound_clipped == 2);
     CHECK(decoded.animal_present && decoded.presence_valid && decoded.distance_mm==100 && decoded.audio_recording);
+    s.wick2_raw=1800; s.wick2_valid=true; s.moisture1_state=1; s.moisture2_state=2;
+    s.valve_state=HH_VALVE_OPEN; s.valve_pulse_us=1200; s.valve_open_ms=60000; s.outlet_blocked=true;
+    CHECK(hh_format_sample(line,sizeof(line),&s)>0);
+    CHECK(hh_parse_sample(line,&decoded));
+    CHECK(decoded.wick2_raw==1800 && decoded.moisture2_state==2 && decoded.outlet_blocked);
+    s.valve_open_ms=59999; CHECK(!hh_sample_valid(&s)); s.valve_open_ms=60000;
     s.distance_mm=3000; CHECK(!hh_sample_valid(&s)); s.distance_mm=100;
     s.presence_valid=false; CHECK(!hh_sample_valid(&s)); s.presence_valid=true;
     s.sound_clipped = 10001; CHECK(!hh_sample_valid(&s)); s.sound_clipped = 2;

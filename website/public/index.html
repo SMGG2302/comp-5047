@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HollowHaven · 树屋观察站</title><link rel="stylesheet" href="/style.css"></head>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HollowHaven · 树屋观察站</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/status.css"></head>
 <body>
 <aside class="sidebar">
   <a class="brand" href="#"><span class="brand-icon">H</span><span>HollowHaven<small>树屋观察站 / FIELD MONITOR</small></span></a>
@@ -12,23 +12,30 @@
 <main>
   <header><div class="breadcrumb">HOLLOWHAVEN <span>/</span> <span id="page-name">实时监测</span></div><div class="header-right"><span id="clock"></span><span class="badge" id="connection-badge">未连接设备</span></div></header>
   <section id="overview" class="tab">
-    <div class="title-row"><div><div class="eyebrow">OBSERVE · LISTEN · UNDERSTAND</div><h1>树屋里的每一次变化</h1><p class="subtitle">环境、占用与声音，汇聚在同一个观察窗口。</p></div><button class="primary connect-button">连接 ESP32</button></div>
-    <div class="network-note"><span>⌁</span><div><strong id="network-title">等待连接树屋</strong><p id="network-detail">先将电脑连接到 HollowHaven-ESP32 热点，再点击连接。页面和本地录音无需互联网。</p></div><a href="/api/export" class="text-link">导出本次 CSV ↗</a></div>
+    <div class="title-row"><div><div class="eyebrow">OBSERVE · LISTEN · UNDERSTAND</div><h1>树屋里的每一次变化</h1><p class="subtitle">环境、光照、水位与光照控制补水，汇聚在同一个观察窗口。</p></div><button class="primary connect-button">连接 ESP32</button></div>
+    <div class="network-note"><span>⌁</span><div><strong id="network-title">等待连接树屋</strong><p id="network-detail">电脑与 ESP32 连接同一路由器，点击连接自动发现设备。</p></div><a href="/api/export" class="text-link">导出本次 CSV ↗</a></div>
+    <article class="panel system-panel"><div class="panel-top"><h3>庇护所状态</h3><span class="muted">悬停或聚焦状态查看传感器数值</span></div><div class="status-strip">
+      <div id="status-water" class="status-item" tabindex="0"><span>水箱补水</span><strong>未知</strong><span class="status-tooltip"></span></div>
+      <div id="status-sun" class="status-item" tabindex="0"><span>太阳直射</span><strong>未知</strong><span class="status-tooltip"></span></div>
+      <div id="status-valve" class="status-item" tabindex="0"><span>水阀</span><strong>未知</strong><span class="status-tooltip"></span></div>
+      <div id="status-left1" class="status-item" tabindex="0"><span>导水布 · 左一</span><strong>未知</strong><span class="status-tooltip"></span></div>
+      <div id="status-left2" class="status-item" tabindex="0"><span>导水布 · 左二</span><strong>未知</strong><span class="status-tooltip"></span></div>
+    </div><p class="small-note">光照测试模式：光照 ADC &lt;500 开阀，≥500 或光照无效时关阀，暂不判断温度。开阀满1分钟，任一路仍干燥则提示堵塞；低水位提示补水维护。</p></article>
+    <div id="maintenance-alerts" role="alert" hidden></div>
     <div class="hero-row">
       <article class="occupancy panel"><div class="panel-top"><span class="eyebrow">树屋占用 / PRESENCE</span><span class="badge" id="presence-badge">等待数据</span></div>
         <div class="presence-content"><div class="hollow-art" aria-hidden="true"><div class="tree-ring ring1"></div><div class="tree-ring ring2"></div><div class="tree-ring ring3"></div><div class="tree-hole"></div><i class="signal-dot"></i></div><div><h2 id="presence-title">尚未读取</h2><p id="presence-detail">等待红外测距数据</p><span class="small-note">红外仅表示物体占用，不确认动物种类。</span></div></div>
-        <div class="occupancy-footer"><span>进入 ≤ 20cm · 离开 ≥ 25cm <small>当前固件阈值</small></span><span id="recording-state">○ 录音待机</span></div>
+        <div class="occupancy-footer"><span>进入 &lt; 190mm（连续3次）· 离开 ≥ 220mm（连续5次）<small>当前固件阈值</small></span><span id="recording-state">○ 录音待机</span></div>
       </article>
       <article class="panel flow-panel"><div class="eyebrow">一次完整的观察</div><h3>从靠近，到留下声音</h3><ol class="flow"><li><b>01</b><div><strong>红外确认占用</strong><small>连续测距防止瞬时误触发</small></div></li><li><b>02</b><div><strong>录制 30 秒</strong><small>接收后自动保存在本机</small></div></li><li><b>03</b><div><strong>分析来访声音</strong><small>选取录音，联网后调用 API</small></div></li></ol></article>
     </div>
     <div class="sensor-grid">
       <article class="sensor panel"><div class="sensor-heading"><span>洞内温度</span><span class="sensor-icon">℃</span></div><div class="reading"><b id="temperature">—</b><span>°C</span></div><small>SHT3x · 洞内环境</small></article>
       <article class="sensor panel"><div class="sensor-heading"><span>空气湿度</span><span class="sensor-icon">◌</span></div><div class="reading"><b id="humidity">—</b><span>%RH</span></div><small>SHT3x · 相对湿度</small></article>
-      <article class="sensor panel"><div class="sensor-heading"><span>吸水层湿润度</span><span class="sensor-icon">≋</span></div><div class="reading"><b id="wick">—</b><span>ADC</span></div><small>电容探头 · 原始值，未标定百分比</small></article>
       <article class="sensor panel"><div class="sensor-heading"><span>红外距离</span><span class="sensor-icon">↔</span></div><div class="reading"><b id="distance">—</b><span>mm</span></div><small>VL53L0X · 无效测距不会视作离开</small></article>
     </div>
     <div class="bottom-row">
-      <article class="panel chart-panel"><div class="panel-top"><div><h3>环境趋势</h3><p class="muted">最近 30 分钟 · 断线处留空</p></div><select id="metric" aria-label="趋势指标"><option value="inside_temp_c">温度 °C</option><option value="inside_rh_pct">空气湿度 %RH</option><option value="wick_raw">吸水层 ADC</option><option value="distance_mm">红外距离 mm</option><option value="sound_rms">声音 RMS</option></select></div><canvas id="trend" aria-label="传感器历史趋势图"></canvas></article>
+      <article class="panel chart-panel"><div class="panel-top"><div><h3>环境趋势</h3><p class="muted">最近 30 分钟 · 断线处留空</p></div><select id="metric" aria-label="趋势指标"><option value="inside_temp_c">温度 °C</option><option value="inside_rh_pct">空气湿度 %RH</option><option value="distance_mm">红外距离 mm</option><option value="sound_rms">声音 RMS</option></select></div><canvas id="trend" aria-label="传感器历史趋势图"></canvas></article>
       <article class="panel sound-panel"><div class="eyebrow">SOUND / 声音采集</div><div class="sound-value"><b id="sound-rms">—</b><span>RMS · ADC单位</span></div><div class="sound-bars" aria-hidden="true"></div><div class="sound-meta"><span>峰峰值 <b id="sound-p2p">—</b></span><span>削顶样本 <b id="sound-clipped">—</b></span></div><p class="muted">SEN0487 · 声音幅度不等于分贝<br>完成的录音会出现在声音档案中。</p><button class="secondary" data-go="recordings">查看声音档案 →</button></article>
     </div>
     <article class="panel log-panel"><div class="panel-top"><h3>观察日志</h3><span class="muted" id="last-update">暂无更新</span></div><div id="event-list" class="events"><p class="empty-small">连接设备后，这里会记录占用变化与文件接收事件。</p></div></article>
@@ -43,9 +50,9 @@
   <section id="settings" class="tab" hidden>
     <div class="title-row"><div><div class="eyebrow">CONNECTION & INTELLIGENCE</div><h1>连接你的树屋</h1><p class="subtitle">设备接收与云端分析分别配置，录音始终留有本地副本。</p></div></div>
     <form id="settings-form" class="settings-grid">
-      <article class="panel settings-panel"><div class="step-label">01 / 设备</div><h3>ESP32 热点连接</h3><label>设备 IP<input id="deviceHost" required value="192.168.4.1"></label><div class="instruction"><strong>HollowHaven-ESP32</strong><p>在 Windows 的 Wi-Fi 列表连接这个热点，再回到实时监测点击连接。</p><p>传感器端口 9000 · 音频端口 9001<br>暂不支持蓝牙接收。</p></div><h3 class="spaced">离线接收，联网识别</h3><p class="muted">只有一张无线网卡时：先接收录音 → 暂停设备连接 → 切回能上网的 Wi-Fi → 上传识别。若有以太网或第二张网卡，可同时使用。</p></article>
+      <article class="panel settings-panel"><div class="step-label">01 / 设备</div><h3>路由器局域网连接</h3><label>设备 IP（auto 自动发现）<input id="deviceHost" required value="auto"></label><div class="instruction"><strong>固件中配置的路由器</strong><p>ESP32 上电后自动连接路由器。电脑连接同一局域网即可接收，同时保留互联网连接。</p><p>ESP32 使用2.4GHz；电脑可用同一路由器的5GHz。请关闭客户端隔离。<br>传感器 TCP 9000 · 音频 TCP 9001 · 发现 UDP 9002</p><p>自动发现失败时，填写 ESP32 串口输出的 IP。</p></div><h3 class="spaced">本机网页，联网识别</h3><p class="muted">网页服务运行在本机8766端口，无需切换 ESP32 热点。</p></article>
       <article class="panel settings-panel"><div class="step-label">02 / 识别</div><h3>音频分析 API</h3><label>服务类型<select id="provider"><option value="gemini">Gemini · 音频理解</option><option value="custom">自定义 · WAV 分类接口</option></select></label><label id="model-field">模型名称<input id="model" required value="gemini-2.5-flash"></label><label id="endpoint-field" hidden>分类 API 地址<input id="endpoint" type="url" placeholder="https://your-service.example/classify"></label><p id="custom-help" class="small-note" hidden>POST原始WAV，Bearer鉴权；返回 [{label,score}] 或 {label,evidence,uncertainty}。其他接口格式需适配。</p><label>API 密钥<input id="apiKey" type="password" autocomplete="new-password" placeholder="仅保存在本次运行内存，不写入磁盘"></label><div class="key-row"><span id="key-state" class="muted">尚未配置密钥</span><label class="checkbox"><input id="clearKey" type="checkbox">清除已有密钥</label></div><label>候选类别与保护对象<textarea id="candidates" rows="7"></textarea></label><p class="small-note">候选类别作为 Gemini 分析背景；自定义模型使用其自身标签。通用音频模型不保证区分具体物种。</p><button type="submit" class="primary">保存设置</button><span id="settings-feedback" role="status"></span></article>
     </form>
   </section>
   <footer><span>HOLLOWHAVEN · 观察，而不打扰</span><span>数据保存在这台电脑 · <span id="session-info">本地会话</span></span></footer>
-</main><div id="toast" role="status" hidden></div><script src="/app.js"></script></body></html>
+</main><dialog id="maintenance-dialog" aria-labelledby="maintenance-heading"><h2 id="maintenance-heading">维护提醒</h2><div id="maintenance-dialog-body"></div><button id="dismiss-maintenance" class="primary">知道了</button><p class="small-note">关闭弹窗后，未解除的告警仍显示在主页状态栏下方。</p></dialog><div id="toast" role="status" hidden></div><script src="/control-view.js"></script><script src="/app.js"></script></body></html>

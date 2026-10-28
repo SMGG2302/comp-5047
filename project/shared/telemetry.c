@@ -16,6 +16,7 @@ void hh_sample_clear(hh_sample_t *s)
     s->inside_temp_c = NAN;
     s->inside_rh_pct = NAN;
     s->outside_temp_c = NAN;
+    s->wick2_raw = -1;
     s->wick_raw = s->light_raw = s->water_raw = -1;
 }
 
@@ -32,6 +33,13 @@ static bool valid_adc(int value, bool present)
 bool hh_sample_valid(const hh_sample_t *s)
 {
     if (s->valid_mask & ~HH_VALID_ALL) return false;
+    if (!valid_adc(s->wick2_raw,s->wick2_valid) || s->moisture1_state>2 || s->moisture2_state>2
+        || s->valve_state>HH_VALVE_CLOSING || s->valve_pulse_us>=20000) return false;
+    if (!(s->valid_mask & HH_VALID_WICK) && s->moisture1_state) return false;
+    if (!s->wick2_valid && s->moisture2_state) return false;
+    if (s->valve_state!=HH_VALVE_OPEN && s->valve_open_ms) return false;
+    if (s->outlet_blocked && (s->valve_state!=HH_VALVE_OPEN || s->valve_open_ms<60000
+        || (s->moisture1_state!=1 && s->moisture2_state!=1))) return false;
     if(s->presence_valid != ((s->valid_mask & HH_VALID_TOF)!=0))return false;
     if(s->presence_valid ? (s->distance_mm<=0 || s->distance_mm>2000) : s->distance_mm!=-1)return false;
     bool sound = (s->valid_mask & HH_VALID_SOUND) != 0;
@@ -51,12 +59,14 @@ int hh_format_sample(char *dest, size_t capacity, const hh_sample_t *s)
 {
     if (!hh_sample_valid(s)) return -1;
     int n = snprintf(dest, capacity,
-        "3,%" PRIu32 ",%" PRIu32 ",%" PRIu64 ",%.2f,%.2f,%.2f,%d,%d,%d,%u,%.2f,%d,%" PRIu32 ",%" PRIu32 ",%" PRIu32 ",%d,%d,%d,%d\n",
+        "4,%" PRIu32 ",%" PRIu32 ",%" PRIu64 ",%.2f,%.2f,%.2f,%d,%d,%d,%u,%.2f,%d,%" PRIu32 ",%" PRIu32 ",%" PRIu32 ",%d,%d,%d,%d,%d,%d,%u,%u,%u,%u,%" PRIu32 ",%d\n",
         s->boot_id, s->sequence, s->uptime_ms, (double)s->inside_temp_c,
         (double)s->inside_rh_pct, (double)s->outside_temp_c,
         s->wick_raw, s->light_raw, s->water_raw, s->valid_mask, (double)s->sound_rms, s->sound_p2p,
         s->sound_samples, s->sound_clipped, s->adc_overflows,
-        s->distance_mm, s->animal_present, s->presence_valid, s->audio_recording);
+        s->distance_mm, s->animal_present, s->presence_valid, s->audio_recording,
+        s->wick2_raw,s->wick2_valid,s->moisture1_state,s->moisture2_state,
+        s->valve_state,s->valve_pulse_us,s->valve_open_ms,s->outlet_blocked);
     return n < 0 || (size_t)n >= capacity ? -1 : n;
 }
 
@@ -104,17 +114,18 @@ bool hh_parse_sample(const char *line, hh_sample_t *result)
     char buf[HH_LINE_CAP];
     memcpy(buf, line, n + 1);
     while (n && (buf[n - 1] == '\r' || buf[n - 1] == '\n')) buf[--n] = '\0';
-    char *fields[20];
+    char *fields[28];
     size_t count = 1;
     fields[0] = buf;
     for (char *p = buf; *p; ++p) {
         if (*p == ',') {
-            if (count == 20) return false;
+            if (count == 28) return false;
             *p = '\0';
             fields[count++] = p + 1;
         }
     }
-    if (count != 20 || strcmp(fields[0], "3") != 0) return false;
+    bool v4=count==28 && strcmp(fields[0],"4")==0;
+    if (!v4 && (count != 20 || strcmp(fields[0], "3") != 0)) return false;
     hh_sample_t s;
     hh_sample_clear(&s);
     uint64_t boot, seq, uptime, mask, samples, clipped, overflows, present, valid, recording;
@@ -145,6 +156,16 @@ bool hh_parse_sample(const char *line, hh_sample_t *result)
     s.sequence = (uint32_t)seq;
     s.uptime_ms = uptime;
     s.valid_mask = (unsigned)mask;
+    if (v4) {
+        uint64_t wvalid,m1,m2,valve,pulse,elapsed,blocked;
+        if (!parse_adc(fields[20],&s.wick2_raw) || !parse_uint(fields[21],1,&wvalid)
+            || !parse_uint(fields[22],2,&m1) || !parse_uint(fields[23],2,&m2)
+            || !parse_uint(fields[24],4,&valve) || !parse_uint(fields[25],19999,&pulse)
+            || !parse_uint(fields[26],UINT32_MAX,&elapsed) || !parse_uint(fields[27],1,&blocked)) return false;
+        s.wick2_valid=wvalid!=0; s.moisture1_state=(unsigned)m1; s.moisture2_state=(unsigned)m2;
+        s.valve_state=(unsigned)valve; s.valve_pulse_us=(unsigned)pulse;
+        s.valve_open_ms=(uint32_t)elapsed; s.outlet_blocked=blocked!=0;
+    }
     if (!hh_sample_valid(&s)) return false;
     *result = s;
     return true;
