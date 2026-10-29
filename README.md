@@ -1,5 +1,7 @@
 # HollowHaven — 树屋环境与声音监测
 
+**当前 v4 技术手册：** [HollowHaven 中文技术手册](HollowHaven_技术手册.md)。传感器接线、路由器连接、8766网页端口、光照开阀和维护告警以该手册及 [CURRENT_SETUP.md](project/CURRENT_SETUP.md) 为准；下方部分介绍保留了早期版本配置。
+
 围绕大袋鼯（Greater Glider）树洞庇护环境开展的原型项目。ESP32 采集环境和距离数据，在检测到近物体时录制声音；电脑接收数据，通过本地网页查看趋势、播放录音，并按需调用音频分析 API。
 
 ## 代码结构

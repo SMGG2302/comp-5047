@@ -1,5 +1,7 @@
 # HollowHaven — Technical Manual
 
+> Historical manual (23 October 2026). For the current v4 wiring, LAN connection, valve control and web interface, see [当前中文技术手册](HollowHaven_技术手册.md). The AP, port and unimplemented-valve descriptions below refer to an earlier version.
+
 **Project:** COMP5047 · **Source:** `SMGG2302/comp-5047` · **Reviewed:** 23 October 2026  
 **Scope:** Documentation of the code in the supplied `COMP5047.zip` and an inventory-level review of three supplied Blender model files. This is a prototype manual, not a certified wildlife deployment guide.
 
