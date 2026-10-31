@@ -1,80 +1,62 @@
-# ESP32 硬件项目
+# ESP32 Hardware & Firmware (v4)
 
-当前 v4 路由器联网、状态栏与水阀控制说明见 [CURRENT_SETUP.md](CURRENT_SETUP.md)。下方保留早期热点模式和舵机试调记录，接线与运行规则请以当前说明为准。
+English | [简体中文](README.zh-CN.md)
 
-## 目录
+Current ESP32-WROOM-32 configuration: router Wi-Fi, dual wicking-cloth sensors, light-controlled valve and live maintenance status. The earlier hotspot and servo sweep settings are historical and do not describe the current firmware.
 
-- firmware/：ESP-IDF C 固件及 PlatformIO 配置。
-- shared/：遥测、音频传输协议和占用判定逻辑。
-- pc_receiver/：可选原生 C 遥测/音频接收器。
-- tests/：C 单元测试和 Python 集成测试。
+## Wiring
 
-## 接线（ESP32-WROOM-32）
+Disconnect power before wiring. All grounds must be common; analog signals must stay within 0–3.3 V.
 
-所有模块共地，信号须兼容 3.3 V；断电接线。
+| Module | ESP32 connection |
+| --- | --- |
+| SHT3x | VCC 3V3, GND, SDA GPIO21, SCL GPIO22 |
+| Wicking cloth Left 1 | VCC 3V3, GND, AO GPIO34 |
+| Wicking cloth Left 2 | VCC 3V3, GND, AO GPIO36 (VP) |
+| Light sensor | 3.3 V compatible supply/output, GND, AO GPIO39 (VN/SVN) |
+| Water level sensor | 3.3 V compatible supply/output, GND, AO GPIO32 |
+| SEN0487 microphone | VCC 3V3, GND, A GPIO33 |
+| VL53L0X module | VIN 3V3, GND, SDA GPIO27, SCL GPIO26; GPIO1/XSHUT unused |
+| MG90S valve servo | Signal GPIO13; external regulated 5 V supply with common GND |
 
-| 模块 | 引脚 | ESP32 |
-| --- | --- | --- |
-| SHT3x | VCC / GND / SDA / SCL | 3V3 / GND / GPIO21 / GPIO22 |
-| 电容式湿度 | VCC / GND / AO | 3V3 / GND / GPIO34 |
-| VL53L0X | VIN / GND / SDA / SCL | 3V3 / GND / GPIO27 / GPIO26 |
-| VL53L0X | GPIO1 / XSHUT | 本原型不接 |
-| SEN0487 | VCC / GND / A | 3V3 / GND / GPIO33 |
+DS18B20 is disabled. Verify the pin labels and supply requirements of your specific sensor modules.
 
-旧的 DS18B20、光敏和水位模块在当前配置中禁用。
+## Network and upload
 
-## 编译和烧录
+Copy `firmware/main/wifi_credentials.example.h` to `wifi_credentials.h` and enter the router’s 2.4 GHz credentials. Keep this ignored file local. Other configuration is in `firmware/main/project_config.h`.
 
-VS Code 安装 PlatformIO IDE，打开本目录下 firmware 文件夹，使用 Build / Upload。也可在已安装 PlatformIO Core 的终端执行：
+Open `firmware` in PlatformIO, or run:
 
-    cd project/firmware
-    pio run
-    pio run -t upload --upload-port COM3
-    pio device monitor -p COM3 -b 115200
+```powershell
+cd project/firmware
+pio run
+pio run -t upload --upload-port COM3
+pio device monitor -p COM3 -b 115200
+```
 
-COM3 仅为示例，按实际端口修改。配置固定 espressif32 6.11.0 和 ESP-IDF 包 3.50402.0；首次构建需要联网下载工具链。路径含中文导致工具链失败时，将仓库放在纯英文路径。不要删除 partitions.csv，它定义音频缓存分区。
+Replace COM3 with the actual USB serial port. The project pins espressif32 6.11.0 and ESP-IDF package 3.50402.0. First build downloads the toolchain. Preserve `partitions.csv`, which defines the audio cache partition.
 
-## 运行配置
+The machine-specific Windows helper `firmware/build-ascii.ps1 -Upload -Port COM3` copies saved sources to `C:\HollowHavenBuild` and uses the configured `C:\.platformio` installation to avoid non-ASCII build-path issues. Check those local paths before using it on another computer.
 
-firmware/main/project_config.h 定义接线、热点凭据与阈值。默认热点 HollowHaven-ESP32，演示密码 HollowHaven5047，地址 192.168.4.1。
+Start the [dashboard](../website/README.md) at `http://127.0.0.1:8766`. Use `auto` discovery or the DHCP IP printed in the serial monitor. Both devices must be on the same LAN without client isolation. Discovery uses UDP 9002, v4 telemetry TCP 9000 and HHW1 audio TCP 9001.
 
-- 遥测 TCP 9000，每约 2 秒发送 HOLLOWHAVEN/3 数据。
-- 音频 TCP 9001，HHW1 头与 16-bit 单声道 PCM；CRC32 校验后以 ACK1 确认。
-- 小于 200 mm 连续 3 次为疑似占用，大于 250 mm 连续 5 次为空闲。无效测距单独标记，不能视为离开。
-- 进入事件触发约 30 秒录音；实际采样率在音频头中传输。阈值为台架值，应根据空树屋距离校准。
-- 当前热点仅允许一个终端连接。推荐使用 ../website 接收；不要同时运行旧 C 接收器争用通道。
+## Control rules
 
-## 可选 C 接收器与测试
+- Light ADC <500 opens to 1200 μs; ≥500 or invalid light closes to 2500 μs. Starts closed. Temperature and water level do not currently control the valve.
+- Servo pulses change by 10 μs every 100 ms (about 13 seconds for full travel), with continuous 50 Hz PWM. Status is a command, without mechanical position feedback.
+- Moisture <2000 is wet, ≥2300 dry; intermediate readings retain the previous state. Initial intermediate/invalid readings are unknown.
+- Once fully open for 60000 ms, either cloth still dry triggers possible blockage. Closing resets the timer. Unknown moisture is not treated as dry.
+- Water ADC <50 triggers the configured “below 50 ml” refill label, not a continuous volume estimate.
+- Presence: 3 consecutive readings <190 mm enter; 5 consecutive readings ≥220 mm leave. Invalid distance is separate from departure. Entry triggers approximately 30 seconds of audio.
 
-Windows 安装 CMake 和 Visual Studio 2022 C++ Build Tools 后，在 project 目录运行：
+## Structure and tests
 
-    powershell -ExecutionPolicy Bypass -File ./build_receiver.ps1
-    powershell -ExecutionPolicy Bypass -File ./run_receiver.ps1
+`firmware/` contains ESP-IDF C code, `shared/` contains protocols/state logic, `pc_receiver/` contains optional C receivers, and `tests/` contains C and Python tests.
 
-音频接收使用 run_audio_receiver.ps1。跨平台遥测接收器可使用：
+```powershell
+cmake -S . -B build
+cmake --build build
+ctest --test-dir build --output-on-failure
+```
 
-    cmake -S . -B build
-    cmake --build build
-    ctest --test-dir build --output-on-failure
-
-原生音频接收器目前仅在 Windows 构建。第三方驱动出处及许可证见 firmware/components/st_tof/PROVENANCE.md。
-
-## 第二路湿度传感器（2026-10-27）
-新增电容湿度模块：VCC→3V3，GND→GND，AO→GPIO35；原第一路仍接 GPIO34。GPIO35 不再接光敏模块。串口每约 2 秒输出 wick（第一路）、wick2（第二路）及 wick2_valid（是否采集到 ADC 样本，不代表传感器接线检测）。读数为 0–4095 原始 ADC 值，未标定百分比。为保持旧网页兼容，第二路暂不加入 v3 Wi-Fi 遥测，网页代码未修改。ADC 按麦克风、第一路湿度、麦克风、第二路湿度循环，保留麦克风一半采样时隙。
-
-
-## 实测阈值与 MG90S（2026-10-28）
-红外连续 3 次低于 190 mm 标记占用；连续 5 次达到 220 mm 解除，190–219 mm 保持原状态。两路湿度低于 2000 为湿，达到 2300 为干（根据干态约 2400 暂定），中间保持之前状态；初始中间值或无效采样为未知。湿度状态仅串口输出，网页未改。
-MG90S 信号分配 GPIO25，使用外部稳压 5V 供电，外部 GND 与 ESP32 GND 共地。servo.c 使用 LEDC 50Hz，提供 hh_servo_set_angle；当前 HH_ENABLE_SERVO=1，上电从 HH_SERVO_START_ANGLE（默认90）开始连续往返测试，1000–2000微秒仅是待标定的有限脉宽范围，不保证对应完整物理0–180度。夹管开关角度和两路控制规则未确认，尚未实现自动滴水联动。
-
-
-当前舵机测试模式：按用户要求已启用 HH_ENABLE_SERVO=1，上电从中点开始，按逻辑角度 0–180 往返循环，每 20 ms 一度，单程约 3.6 秒。使用 1000–2000 微秒的保守脉宽范围，不保证完整物理行程；暂不与湿度联动。
-
-舵机扩大范围试调：当前配置为 500–2500 us，原先为 1000–2000 us；这是脉宽跨度两倍，不代表实际转角三倍。未验证实物机械端点，遇到卡住或持续嗡鸣应断电并缩小范围。
-
-## 本机中文路径编译修复
-本机提供 project/firmware/build-ascii.ps1，将已保存的固件和 shared 源码同步到 C:\HollowHavenBuild，再调用 C:\.platformio 工具链。VS Code 打开 project/firmware 后，先保存全部文件，选择“终端 → 运行任务 → HollowHaven: Upload (ASCII path)”。Ctrl+Shift+B 只编译。也可在 firmware 终端运行：
-
-    powershell -ExecutionPolicy Bypass -File .\build-ascii.ps1 -Upload -Port COM3
-
-原 PlatformIO Upload 按钮仍从中文路径构建，请使用新增任务。脚本为这台 Windows 电脑配置。
+On Windows, `build_receiver.ps1` needs CMake and Visual Studio C++ Build Tools. `run_receiver.ps1` and `run_audio_receiver.ps1` launch optional native receivers; avoid competing with the dashboard. The native audio receiver currently builds on Windows only. Third-party driver [provenance and license](firmware/components/st_tof/PROVENANCE.md) are preserved.

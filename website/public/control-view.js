@@ -1,8 +1,10 @@
 'use strict';
-function sensorStatusView(s,stale){
+function sensorStatusView(s,stale,language='zh'){
+  const translate=typeof i18n!=='undefined'?i18n.translate:require('./i18n').translate;
+  const localize=value=>{if(typeof value==='string')return translate(value,language);if(Array.isArray(value))return value.map(localize);if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).map(([k,v])=>[k,localize(v)]));return value;};
   const unknown=label=>({label,value:'未知',tone:'',detail:'暂无新鲜有效数据'});
   const view={water:unknown('水箱补水'),sun:unknown('太阳直射'),valve:unknown('水阀'),left1:unknown('导水布 · 左一'),left2:unknown('导水布 · 左二'),alerts:[]};
-  if(stale||!s)return view;
+  if(stale||!s)return localize(view);
   if(s.valid_mask&16){
     const low=s.water_raw<50;
     view.water={label:'水箱补水',value:low?'需要补水 · 小于50ml':'暂不需要补水',tone:low?'alert':'ok',detail:`当前水位 ADC：${s.water_raw}；低于50触发补水。小于50ml为设定提示，非连续体积测量。`};
@@ -17,6 +19,6 @@ function sensorStatusView(s,stale){
     const dry=[s.moisture1_state===1?'左一':'',s.moisture2_state===1?'左二':''].filter(Boolean).join('、');
     view.alerts.push({id:'blocked',title:'出水口堵塞',detail:`开阀已满1分钟，${dry}导水布仍干燥。请检查出水口及供水；这是规则告警，需现场核查。`});
   }
-  return view;
+  return localize(view);
 }
 if(typeof module!=='undefined')module.exports={sensorStatusView};

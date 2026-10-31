@@ -72,7 +72,11 @@ test('end-to-end TCP, CRC retry, persistence-before-ACK, local API and classific
     const viewScript=await fetch(base+'/control-view.js');assert.equal(viewScript.status,200);
     assert.match(await viewScript.text(),/function sensorStatusView/);
     const post=(url,value,token=state.csrf)=>fetch(base+url,{method:'POST',headers:{'Content-Type':'application/json','X-HH-Token':token},body:JSON.stringify(value||{})});
-    assert.equal((await post('/api/connect',{},'wrong')).status,403);
+    const rejected=await post('/api/connect',{},'wrong');
+    assert.equal(rejected.status,403);assert.match((await rejected.json()).error,/Invalid request token/);
+    const chineseRejected=await fetch(base+'/api/connect',{method:'POST',headers:{'X-HH-Token':'wrong','X-HH-Language':'zh'}});
+    assert.match((await chineseRejected.json()).error,/请求来源无效/);
+    assert.equal((await fetch(base+'/i18n.js')).status,200);
     const cfg={...state.config,deviceHost:'127.0.0.1',provider:'custom',endpoint:'http://127.0.0.1:'+apiPort,apiKey:'test-only-secret'};
     assert.equal((await post('/api/settings',cfg)).status,200);
     await post('/api/connect');

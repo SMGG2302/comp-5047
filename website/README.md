@@ -1,55 +1,59 @@
-# HollowHaven 树屋观察站
+# HollowHaven Local Dashboard
 
-Windows 本地软件，用浏览器显示 ESP32 热点数据、接收录音并按需调用声音识别 API。ESP32 固件仍为 C；本软件使用 Node.js，无需安装 npm 依赖。
+English | [简体中文](README.zh-CN.md)
 
-## 启动与接收
+A local Node.js dashboard for ESP32 telemetry, water-valve status, maintenance alerts, recordings and optional audio analysis. English is the default. Select **English / 中文** in the header; the browser remembers the choice. Navigation, dynamic statuses, tooltips, alerts, chart labels, logs and application errors switch language without interrupting reception or playback.
 
-1. 双击本目录的 `HollowHaven.cmd`。当前电脑已安装 Node.js；其他电脑需要 Node.js 18 或以上。
-2. 浏览器打开 http://127.0.0.1:8766 。关闭页面不会停止后台接收；停止服务可运行 `stop.ps1`。
-3. 电脑与 ESP32 连接同一路由器。ESP32 使用2.4GHz，电脑可以使用同一局域网的5GHz。
-4. 软件中点击连接，设备地址使用 `auto` 自动发现；也可填写串口打印的 DHCP IPv4 地址。不要同时运行旧版接收程序。路由器需要允许客户端互通。
+## Start and connect
 
-主页状态栏显示补水、太阳直射、水阀、导水布左一和左二。原始 ADC 数值仅在悬停或键盘聚焦状态时显示，不再单独展示数值卡片或趋势。水位 ADC<50 显示“小于50ml”并弹出“需要补水维护”；光照 ADC<500 为太阳直射；电容 ADC<2000 为湿润，≥2300为干燥（实测约2400），中间保持前态。左一GPIO34、左二GPIO36（VP）、光照GPIO39、水位GPIO32；浮空输入仍可能产生数值。
+```powershell
+cd website
+node server.js
+```
 
-当前为光照单条件测试：有效光照 ADC<500 请求开阀（1200μs），≥500或光照无效时请求关阀（2500μs），暂不判断温度，上电默认关闭。舵机信号为GPIO13，每100ms移动10μs，完整行程约13秒。v4上报舵机输出、打开/关闭/移动中及开阀时间；这不是机械位置反馈。到达1200μs后计时满60秒，任一路明确干燥则上报堵塞并弹出“出水口堵塞”。关阀或恢复湿润后解除，未知读数不计作干燥；断线时全部状态显示未知，不显示过期告警。两种告警可以同时出现，关闭弹窗不清除主页提示；恢复后再次触发会重新弹窗。
+Requires Node.js 18 or newer; no npm dependencies are required. On Windows, double-click `HollowHaven.cmd`. Open [http://127.0.0.1:8766](http://127.0.0.1:8766). Closing the page leaves the receiver running; `stop.ps1` stops the background service started by the Windows launcher.
 
-当前固件以距离小于190mm连续3次触发占用，达到220mm连续5次解除占用，进入时录制30秒。阈值仍需按树屋实测调整；红外只能检测遮挡，不能证明遮挡物一定是动物。软件接收并保存固件完成的录音，不负责修改阈值或烧录芯片。
+ESP32 and computer must share the router’s local network. ESP32 uses 2.4 GHz Wi-Fi; the computer can use the same router’s 5 GHz Wi-Fi or Ethernet. Disable client isolation. Set Device IP to `auto` for discovery (UDP 9002), or enter the IP printed by the serial monitor. Telemetry uses TCP 9000; audio uses TCP 9001. Avoid running another receiver that competes for device connections.
 
-## 声音识别
+## Live monitoring
 
-设置页默认提供 Gemini 音频分析接口，模型名可修改。密钥请在软件中输入，不要发到聊天。密钥只保存在本次后台进程内存中，重启需重新输入；切换服务或接口地址且未输入新密钥时，会清除旧密钥。
+The status bar shows refill needs, direct sunlight, valve commands and two wicking-cloth moisture states. Hover or keyboard-focus a status to see ADC values and rules. Temperature, air humidity, infrared distance and sound statistics appear below. See the [current hardware rules](../project/README.md).
 
-录音页选中 WAV 后点击“上传并识别”才会把该文件发送到所配置服务；接收录音、播放、导入均不会自动上传。API 可能产生服务商费用。
+Water below 50 ADC triggers the configured “below 50 ml” refill label, not a continuous volume conversion. Dry cloth after one minute fully open triggers a possible blockage alert, which needs physical inspection. Invalid or stale data stays unknown and does not establish animal departure.
 
-重点对象为大袋鼯 Greater Glider（Petauroides volans），候选包括其他负鼠/袋鼯、鸟类/鹦鹉、可听蝙蝠声、昆虫、人声、环境声及未知。这里采用通用音频模型，尚未用目标动物标注数据验证准确率，结果是 AI 候选判断。当前约 8192 Hz 录音无法用于完整的蝙蝠超声识别；安静、含糊或没有可靠证据时应保留未知。
+## Audio analysis
 
-ESP32 和电脑连接路由器后，电脑可以同时接收数据与联网识别，无需切换网络。
+Select a WAV file, configure Gemini or a custom API, then click **Upload & analyze audio**. Reception, playback and import never upload automatically. Enter the API key in Settings; it lives only in server memory and is cleared on restart. Changing provider or endpoint without a replacement key clears the old key. API usage may incur provider charges.
 
-自定义服务接收 HTTP POST 原始 WAV，Content-Type 为 audio/wav；填写密钥时附带 Bearer 认证。接口须为 HTTPS（本机测试允许 HTTP），返回下列任一种 JSON：
+Gemini is asked to return new results in the selected interface language. Existing results and custom-service responses keep their original language, as do filenames and user settings. General audio models have not been validated for this project’s wildlife species. Candidate labels are provisional, model scores are not calibrated probabilities, and these recordings cannot identify ultrasonic calls not captured by the microphone.
 
-    {"label":"未知","evidence":"声音较弱","uncertainty":"需要更清晰录音"}
-    [{"label":"鸟类","score":0.7},{"label":"未知","score":0.3}]
-    {"predictions":[{"label":"鸟类","score":0.7}]}
+Custom endpoints receive HTTP POST raw WAV with `Content-Type: audio/wav` and optional `Authorization: Bearer …`. HTTPS is required except for local testing. Return one of:
 
-score 是服务自身分数，不保证等于物种识别正确概率。
+```json
+{"label":"Unknown","evidence":"Weak signal","uncertainty":"A clearer recording is needed"}
+```
 
-## 本地文件与协议
+```json
+[{"label":"Bird","score":0.7},{"label":"Unknown","score":0.3}]
+```
 
-- `recordings/`：接收到的 WAV 和手动导入录音，兼容原有历史录音。
-- `data/session_*.csv`：每次启动的软件采集记录，可在页面导出。
-- `data/results.json`：识别结果；`data/settings.json`：不含密钥的配置。
-- TCP 9000：HOLLOWHAVEN/4 的28列遥测，网页兼容旧v3（缺失状态显示未知）；TCP 9001：HHW1 音频帧；UDP 9002：局域网设备发现。
-- 音频校验 CRC32，并在文件持久化后回复 ACK1；断线自动重连。
-- 默认网页仅监听 127.0.0.1:8766；发现请求从本机临时UDP端口发送到局域网广播地址。
+Or wrap the array in `{"predictions":[...]}`.
 
-## 验证
+## Local storage and protocol
 
-运行 `node --test test.js`。自动化测试覆盖遥测解析、WAV 校验、音频断线与 CRC 错误、持久化后确认、API 模拟调用、密钥不落盘和导出。浏览器检查脚本为 `ui-check.js`，需要 Playwright 及兼容的 Node.js 版本。
+- `recordings/`: received and imported WAV files.
+- `data/session_*.csv`: session telemetry, available through CSV export.
+- `data/results.json`: saved analysis results; `data/settings.json`: settings without API keys.
+- Browser local storage key `hollowhaven.language`: interface language only.
+- v4 telemetry and legacy v3 input; HHW1 audio with CRC32 and ACK1 only after successful persistence.
 
-已通过模拟设备端到端测试和桌面/手机宽度浏览器检查。未配置真实 API 密钥，因此尚未验证真实服务的识别效果；不能把模拟测试当作动物识别准确率测试。
+The HTTP server binds only to `127.0.0.1:8766`. It is not a LAN-shared or public dashboard.
 
-## 命令行启动
+## Verification
 
-在 website 目录执行 node server.js，打开 http://127.0.0.1:8766。运行 node --test test.js 执行测试。public/ 是网页，server.js 是接收与 API 后端，protocol.js 是协议解析。
+```powershell
+node --test test.js i18n.test.js
+node ui-check.js
+```
 
-可选 UI 测试需要安装 Playwright、使用兼容 Node.js 的版本，并安装 Edge；启动服务且导入至少一条 WAV 后运行 node ui-check.js。此测试不属于无依赖启动所需步骤。
+The browser check is optional and requires Playwright and Edge. Set `HH_PLAYWRIGHT_PATH` to an installed Playwright module path if needed, and `HH_UI_URL` for a non-default dashboard URL. Checks cover language switching/persistence, live alerts, settings preservation, archive empty states and desktop/mobile layout. Unit and simulated integration tests do not validate physical hardware or wildlife identification accuracy.

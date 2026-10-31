@@ -1,36 +1,55 @@
-# HollowHaven — 树屋环境与声音监测
+# HollowHaven — Shelter Environment & Sound Monitor
 
-**当前 v4 技术手册：** [HollowHaven 中文技术手册](HollowHaven_技术手册.md)。传感器接线、路由器连接、8766网页端口、光照开阀和维护告警以该手册及 [CURRENT_SETUP.md](project/CURRENT_SETUP.md) 为准；下方部分介绍保留了早期版本配置。
+English | [简体中文](README.zh-CN.md)
 
-围绕大袋鼯（Greater Glider）树洞庇护环境开展的原型项目。ESP32 采集环境和距离数据，在检测到近物体时录制声音；电脑接收数据，通过本地网页查看趋势、播放录音，并按需调用音频分析 API。
+Current v4 reference: [Chinese technical manual](HollowHaven_技术手册.md) and [current setup](project/CURRENT_SETUP.md), covering wiring, router networking, port 8766, light-controlled watering and maintenance alerts.
 
-## 代码结构
+HollowHaven is an ESP32 prototype for studying tree-hollow shelter conditions for the Greater glider (*Petauroides volans*). It measures temperature, humidity, two wicking-cloth moisture channels, light, water level and distance. A nearby object triggers an approximately 30-second audio recording. A local dashboard displays telemetry, receives recordings and offers optional, manual audio analysis through an API.
 
-| 文件夹 | 内容 |
+## Quick start
+
+1. Follow the [hardware setup](project/README.md). Copy `project/firmware/main/wifi_credentials.example.h` to `wifi_credentials.h` and enter your router’s 2.4 GHz Wi-Fi credentials. This local credentials file is ignored by Git.
+2. Build and upload `project/firmware` with PlatformIO. See the hardware README for the Windows ASCII-path build helper and serial-port selection.
+3. Connect the computer to the same router. The computer may use Wi-Fi or Ethernet; client isolation must be disabled.
+4. With Node.js 18 or newer installed, run `node server.js` in `website`, or double-click `website/HollowHaven.cmd` on Windows. No `npm install` is required.
+5. Open [http://127.0.0.1:8766](http://127.0.0.1:8766). Leave Device IP as `auto` and click **Connect ESP32**. If discovery fails, enter the IPv4 address printed by the ESP32 serial monitor.
+6. Use the **English / 中文** selector in the header to change language. English is the default; the browser remembers your choice. Switching language keeps your connection, settings and audio playback intact.
+7. In **Sound archive**, play local recordings. To analyze one, configure your API in Settings and explicitly click **Upload & analyze audio**. Internet access is required for cloud analysis.
+
+## Repository
+
+| Directory | Contents |
 | --- | --- |
-| [project/](project/README.md) | ESP32 C 固件、共享协议、原生 C 接收器与测试 |
-| [website/](website/README.md) | Node.js 本地服务、HTML/CSS/JavaScript 页面、API 接口与测试 |
+| [project/](project/README.md) | ESP-IDF C firmware, wiring, shared protocols, native receivers and tests |
+| [website/](website/README.md) | Local Node.js service, bilingual dashboard, API integration and tests |
 
-[Draft.md](Draft.md) 保留项目提案，[COURSE_BRIEF.md](COURSE_BRIEF.md) 保留原课程说明。网页是原型调试与研究数据查看工具。
+[Draft.md](Draft.md) contains the proposal; [COURSE_BRIEF.md](COURSE_BRIEF.md) contains the course brief. The dashboard is a prototype debugging and research-data tool.
 
-## 快速开始
+Wiring spreadsheet: [接线表.xlsx](接线表.xlsx).
 
-1. 按 [硬件 README](project/README.md) 接线，在 VS Code PlatformIO 中打开 project/firmware，编译并上传。
-2. 安装 Node.js（最低 18，建议使用受支持的 LTS），进入 website，运行 node server.js；Windows 也可双击 website/HollowHaven.cmd。无需 npm install。
-3. 电脑连接 HollowHaven-ESP32 热点，打开 http://127.0.0.1:8765，点击连接 ESP32。
-4. 在声音档案中播放录音；需要识别时配置 API，切换到可上网的网络，再手动上传选中的录音。
+## Current hardware and control rules
 
-## 当前能力与边界
+The current board is ESP32-WROOM-32. See the [hardware README](project/README.md) for wiring.
 
-- 四个传感器：SHT3x 温湿度、电容式吸水层湿度、VL53L0X 距离、SEN0487 模拟麦克风。
-- 距离触发约 30 秒录音；二进制传输带 CRC32，保存成功后确认接收。
-- AI 候选类别包含大袋鼯、其他负鼠/袋鼯、鸟类、昆虫、环境声和未知。尚未验证物种识别准确率；红外遮挡也不等于确认动物身份。
-- 当前声音采样约 8192 Hz，不能用于完整的蝙蝠超声识别。
-- 吸水层 ADC 是原始值；降温结构及自动阀门控制仍需实验验证，本版本未实现闭环水流控制。
-- 网页仅本机访问，未启用局域网共享或公网部署。
+- **Network:** router station mode; UDP 9002 discovery, TCP 9000 telemetry and TCP 9001 audio. The dashboard listens only on `127.0.0.1:8766`.
+- **Valve test:** valid light ADC below 500 opens the valve to 1200 μs. At 500 or above, or with invalid light data, it closes to 2500 μs. It starts closed. Temperature and water level currently do not control the valve.
+- **Moisture:** below 2000 is wet; 2300 or above is dry. Intermediate values retain the previous state. Uninitialized or invalid readings are unknown.
+- **Maintenance:** a cloth still dry after one minute fully open triggers a possible blockage alert. Water ADC below 50 triggers a refill alert; the “below 50 ml” label is a configured threshold, not a continuous volume measurement.
+- **Presence:** three consecutive readings below 190 mm mark possible occupancy; five at or above 220 mm clear it. Invalid distance readings do not imply departure.
 
-## 验证和数据
+Valve status reports the servo command, not a measured mechanical position. ADC moisture readings are not calibrated moisture percentages. Physical cooling, water flow and animal sound recognition require field validation. Infrared does not establish animal identity. Audio sampling does not cover ultrasonic bat identification.
 
-网页测试：在 website 执行 node --test test.js。C 接收器和状态逻辑测试见 project/README.md。模拟测试不能替代真实传感器、网络与动物声音效果验证。
+## Language and analysis results
 
-录音、运行数据、API 密钥、驱动安装包、构建缓存均不提交。API 密钥只在本地服务进程内存保存。固件包含演示热点密码，实际部署前请修改。第三方 VL53L0X 驱动保留原许可证及来源说明，见 project/firmware/components/st_tof/PROVENANCE.md。
+Navigation, live states, tooltips, maintenance alerts, charts, settings, logs and application errors support English and Chinese. New Gemini analyses are requested in the language selected when you start the upload. Existing AI results, filenames, custom-service labels and user-entered settings keep their original content; switching the interface does not translate or re-upload them.
+
+## Tests and local data
+
+```powershell
+cd website
+node --test test.js i18n.test.js
+```
+
+The optional browser check is `node ui-check.js` (requires Playwright and Edge). Native C tests are documented in the [hardware README](project/README.md). Simulated tests do not replace physical sensor, valve, network or wildlife validation.
+
+Recordings, session data, API keys, local Wi-Fi credentials and build caches are excluded from Git. API keys are held only in the running server’s memory; a server restart clears them. Recordings upload only when explicitly requested. The VL53L0X driver retains its license and [provenance](project/firmware/components/st_tof/PROVENANCE.md).
