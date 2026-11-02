@@ -28,4 +28,6 @@ Node.js 本地网页显示 ESP32 数据、阀门状态、维护告警和录音�
 
 `recordings/` 保存录音，`data/session_*.csv` 保存会话遥测，`data/results.json` 保存分析，`data/settings.json` 保存不含密钥的设置。语言仅记录在浏览器 `hollowhaven.language`。支持 v4 和旧 v3 遥测；音频 CRC32 校验并持久化后才回复 ACK1。
 
-HTTP 仅监听 `127.0.0.1:8766`。在本目录运行 `node --test test.js i18n.test.js`。可选 `node ui-check.js` 需要 Playwright 和 Edge；可通过 `HH_PLAYWRIGHT_PATH` 指定模块，`HH_UI_URL` 指定测试地址。模拟测试不替代实物与物种识别验证。
+HTTP 仅监听 `127.0.0.1:8766`。在本目录运行 `node --test test.js i18n.test.js gemini.test.js`。可选 `node ui-check.js` 需要 Playwright 和 Edge；可通过 `HH_PLAYWRIGHT_PATH` 指定模块，`HH_UI_URL` 指定测试地址。模拟测试不替代实物与物种识别验证。
+
+Gemini 已使用 Interactions API（`/v1beta/interactions`）、内联WAV、结构化JSON和 `store: false`。默认模型 `gemini-3.8-flash`，启动时迁移旧默认 `gemini-2.5-flash`。手动上传可能产生费用；HTTP错误显示已去除密钥的服务商详情。重启会清除内存密钥，需在设置重新输入。

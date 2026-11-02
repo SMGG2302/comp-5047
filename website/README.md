@@ -52,8 +52,10 @@ The HTTP server binds only to `127.0.0.1:8766`. It is not a LAN-shared or public
 ## Verification
 
 ```powershell
-node --test test.js i18n.test.js
+node --test test.js i18n.test.js gemini.test.js
 node ui-check.js
 ```
 
 The browser check is optional and requires Playwright and Edge. Set `HH_PLAYWRIGHT_PATH` to an installed Playwright module path if needed, and `HH_UI_URL` for a non-default dashboard URL. Checks cover language switching/persistence, live alerts, settings preservation, archive empty states and desktop/mobile layout. Unit and simulated integration tests do not validate physical hardware or wildlife identification accuracy.
+
+Gemini uses the Interactions API (`/v1beta/interactions`), inline WAV, structured JSON output and `store: false`. Default model: `gemini-3.8-flash`; the old default `gemini-2.5-flash` is migrated on startup. Explicit uploads may incur provider charges. HTTP errors include the provider message with the API key redacted. A restart clears the in-memory key; enter it again in Settings.

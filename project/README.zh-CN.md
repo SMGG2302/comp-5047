@@ -33,7 +33,7 @@ PlatformIO 打开 `firmware` 编译、上传；命令行为 `pio run`、`pio run
 
 ## 当前控制规则
 
-- 光照 ADC <500 开阀至1200μs，≥500或光照无效时关阀至2500μs，上电关闭；温度、水位暂不参与开关阀。
+- 有效光照 ADC <500且温度 >30°C开阀至1200μs；完全打开后至少保持1分钟，此后每分钟温度 <26°C才关阀至2500μs，否则继续1分钟。光照变化不终止周期，温度无效时保持到下次检查。上电关闭，水位仅告警。
 - 每100ms改变10μs，完整动作约13秒，50Hz PWM持续输出；状态表示命令，没有机械位置反馈。
 - 湿度<2000为湿润、≥2300为干燥，中间保持此前状态；初始中间值或无效采样为未知。
 - 完全开阀满60000ms后任一路仍干燥则提示可能堵塞；关闭重置计时，未知不算干燥。
@@ -45,3 +45,5 @@ PlatformIO 打开 `firmware` 编译、上传；命令行为 `pio run`、`pio run
 `firmware/` 为固件，`shared/` 为协议与状态逻辑，`pc_receiver/` 为可选C接收器，`tests/` 为C和Python测试。
 
 在 `project` 运行 `cmake -S . -B build`、`cmake --build build`、`ctest --test-dir build --output-on-failure`。Windows 的 `build_receiver.ps1` 需要 CMake 和 Visual Studio C++ Build Tools。原生音频接收器仅支持 Windows；不要与网页同时争用设备连接。VL53L0X 保留[来源与许可证](firmware/components/st_tof/PROVENANCE.md)。
+
+网络优先级：本地凭据文件的 `HH_WIFI_SSID` / `HH_WIFI_PASSWORD` 为首选，可选 `HH_WIFI_FALLBACK_SSID` / `HH_WIFI_FALLBACK_PASSWORD` 为备用。上电先连首选，连续失败三次切换；两者都失败时每三次轮换。连通后保持当前网络，掉线时重新优先尝试首选。两个网络均需提供2.4GHz。

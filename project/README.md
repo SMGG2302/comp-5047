@@ -2,7 +2,7 @@
 
 English | [简体中文](README.zh-CN.md)
 
-Current ESP32-WROOM-32 configuration: router Wi-Fi, dual wicking-cloth sensors, light-controlled valve and live maintenance status. The earlier hotspot and servo sweep settings are historical and do not describe the current firmware.
+Current ESP32-WROOM-32 configuration: router Wi-Fi, dual wicking-cloth sensors, temperature/light-controlled valve and live maintenance status. The earlier hotspot and servo sweep settings are historical and do not describe the current firmware.
 
 ## Wiring
 
@@ -42,7 +42,7 @@ Start the [dashboard](../website/README.md) at `http://127.0.0.1:8766`. Use `aut
 
 ## Control rules
 
-- Light ADC <500 opens to 1200 μs; ≥500 or invalid light closes to 2500 μs. Starts closed. Temperature and water level do not currently control the valve.
+- Valid light ADC <500 and temperature >30°C opens to 1200 μs. Hold at least one minute after fully open; check once per minute and close to 2500 μs only below 26°C. Otherwise hold another minute. Light changes do not end a cycle; invalid temperature keeps it open until a later check. Starts closed; water level is an alert only.
 - Servo pulses change by 10 μs every 100 ms (about 13 seconds for full travel), with continuous 50 Hz PWM. Status is a command, without mechanical position feedback.
 - Moisture <2000 is wet, ≥2300 dry; intermediate readings retain the previous state. Initial intermediate/invalid readings are unknown.
 - Once fully open for 60000 ms, either cloth still dry triggers possible blockage. Closing resets the timer. Unknown moisture is not treated as dry.
@@ -60,3 +60,5 @@ ctest --test-dir build --output-on-failure
 ```
 
 On Windows, `build_receiver.ps1` needs CMake and Visual Studio C++ Build Tools. `run_receiver.ps1` and `run_audio_receiver.ps1` launch optional native receivers; avoid competing with the dashboard. The native audio receiver currently builds on Windows only. Third-party driver [provenance and license](firmware/components/st_tof/PROVENANCE.md) are preserved.
+
+Wi-Fi priority: set the primary `HH_WIFI_SSID` / `HH_WIFI_PASSWORD` and optional `HH_WIFI_FALLBACK_SSID` / `HH_WIFI_FALLBACK_PASSWORD` in the local credentials file. Boot tries the primary first. After three failed attempts it switches networks; when neither works it alternates in groups of three. A working connection is retained; after disconnection it starts with the primary again. Both networks must offer 2.4 GHz.

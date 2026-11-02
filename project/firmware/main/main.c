@@ -25,6 +25,7 @@
 #include "servo.h"
 #include "moisture.h"
 #include "maintenance.h"
+#include "valve_control.h"
 #include "wifi_credentials.h"
 
 static const char *TAG = "hollowhaven";
@@ -33,21 +34,66 @@ static hh_sample_t latest;
 static bool have_sample;
 static uint32_t boot_id;
 
-_Static_assert(sizeof(HH_WIFI_SSID) - 1 <= 32, "SSID is too long");
+/* Keep older, single-network local credential files usable. */
+#ifndef HH_WIFI_FALLBACK_SSID
+#define HH_WIFI_FALLBACK_SSID ""
+#define HH_WIFI_FALLBACK_PASSWORD ""
+#endif
+_Static_assert(sizeof(HH_WIFI_SSID) - 1 > 0 && sizeof(HH_WIFI_SSID) - 1 <= 32, "Invalid primary SSID length");
 _Static_assert(sizeof(HH_WIFI_PASSWORD) - 1 >= 8 && sizeof(HH_WIFI_PASSWORD) - 1 <= 63,
-               "WPA2 password must contain 8..63 characters");
+               "Primary WPA2 password must contain 8..63 characters");
+_Static_assert(sizeof(HH_WIFI_FALLBACK_SSID) - 1 <= 32, "Fallback SSID is too long");
+_Static_assert(sizeof(HH_WIFI_FALLBACK_SSID) == 1 ||
+               (sizeof(HH_WIFI_FALLBACK_PASSWORD) - 1 >= 8 && sizeof(HH_WIFI_FALLBACK_PASSWORD) - 1 <= 63),
+               "Fallback WPA2 password must contain 8..63 characters");
+
+#define WIFI_ATTEMPTS_PER_NETWORK 3u
+static const char *const wifi_names[] = {HH_WIFI_SSID, HH_WIFI_FALLBACK_SSID};
+static const char *const wifi_passwords[] = {HH_WIFI_PASSWORD, HH_WIFI_FALLBACK_PASSWORD};
+/* Only the default event-loop task changes these values after Wi-Fi starts. */
+static unsigned wifi_network, wifi_failures;
+static bool wifi_had_ip;
+
+static void configure_wifi_network(void)
+{
+    wifi_config_t config = {0};
+    memcpy(config.sta.ssid, wifi_names[wifi_network], strlen(wifi_names[wifi_network]));
+    memcpy(config.sta.password, wifi_passwords[wifi_network], strlen(wifi_passwords[wifi_network]));
+    config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
+    config.sta.pmf_cfg.capable = true;
+    config.sta.pmf_cfg.required = false;
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &config));
+}
+
+static void join_wifi_network(void)
+{
+    ESP_LOGI(TAG,"Joining Wi-Fi '%s' (%s), attempt %u/%u",wifi_names[wifi_network],
+             wifi_network ? "fallback" : "primary",wifi_failures+1,WIFI_ATTEMPTS_PER_NETWORK);
+    ESP_ERROR_CHECK(esp_wifi_connect());
+}
 
 static void wifi_event(void *arg,esp_event_base_t base,int32_t id,void *data)
 {
     (void)arg;
-    if (base==WIFI_EVENT && id==WIFI_EVENT_STA_START) esp_wifi_connect();
+    if (base==WIFI_EVENT && id==WIFI_EVENT_STA_START) join_wifi_network();
     else if (base==WIFI_EVENT && id==WIFI_EVENT_STA_DISCONNECTED) {
         wifi_event_sta_disconnected_t *event=data;
-        ESP_LOGW(TAG,"Wi-Fi disconnected reason=%u; reconnecting",event->reason);
-        esp_wifi_connect();
+        ESP_LOGW(TAG,"Wi-Fi '%s' disconnected reason=%u",wifi_names[wifi_network],event->reason);
+        unsigned previous=wifi_network;
+        if (wifi_had_ip) {
+            /* After a working connection drops, always prefer the primary again. */
+            wifi_network=0; wifi_failures=0; wifi_had_ip=false;
+        } else if (++wifi_failures>=WIFI_ATTEMPTS_PER_NETWORK) {
+            wifi_network=wifi_names[1][0] ? 1-wifi_network : 0;
+            wifi_failures=0;
+        }
+        if (previous!=wifi_network) configure_wifi_network();
+        join_wifi_network();
     } else if (base==IP_EVENT && id==IP_EVENT_STA_GOT_IP) {
         ip_event_got_ip_t *event=data;
-        ESP_LOGI(TAG,"Wi-Fi connected: IP=" IPSTR " TCP=%d",IP2STR(&event->ip_info.ip),HH_TCP_PORT);
+        wifi_had_ip=true; wifi_failures=0;
+        ESP_LOGI(TAG,"Wi-Fi connected: SSID='%s' IP=" IPSTR " TCP=%d",
+                 wifi_names[wifi_network],IP2STR(&event->ip_info.ip),HH_TCP_PORT);
     }
 }
 
@@ -84,21 +130,13 @@ static void start_station(void)
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT,IP_EVENT_STA_GOT_IP,wifi_event,NULL));
     wifi_init_config_t init = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&init));
-    wifi_config_t config = {
-        .sta = {
-            .ssid = HH_WIFI_SSID,
-            .password = HH_WIFI_PASSWORD,
-            .threshold.authmode = WIFI_AUTH_WPA2_PSK,
-            .pmf_cfg = {.capable=true,.required = false},
-        },
-    };
     ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &config));
+    configure_wifi_network();
     ESP_ERROR_CHECK(esp_wifi_start());
     /* Generate after Wi-Fi is started, when hardware entropy is available. */
     boot_id = esp_random();
-    ESP_LOGI(TAG,"Joining Wi-Fi '%s'; waiting for DHCP",HH_WIFI_SSID);
+    ESP_LOGI(TAG,"Wi-Fi priority: primary='%s', fallback='%s'",wifi_names[0],wifi_names[1]);
     assert(xTaskCreate(discovery_task,"discovery",3072,NULL,3,NULL)==pdPASS);
 }
 
@@ -106,22 +144,28 @@ static void acquisition_task(void *argument)
 {
     (void)argument;
     uint32_t sequence = 0;
-    bool valve_open=false;
+    hh_valve_control_t valve={0};
     hh_moisture_t wet1=HH_MOISTURE_UNKNOWN,wet2=HH_MOISTURE_UNKNOWN;
     TickType_t last = xTaskGetTickCount();
     for (;;) {
         hh_sample_t s;
         hh_sensors_read(&s);
         bool light_valid=(s.valid_mask & HH_VALID_LIGHT)!=0 && s.light_raw>=0;
-        bool request_open=light_valid && s.light_raw<HH_VALVE_OPEN_LIGHT_RAW;
-        if (request_open!=valve_open) {
+        hh_servo_snapshot(&s);
+        hh_valve_control_t proposed=valve;
+        uint64_t now_ms=(uint64_t)(esp_timer_get_time()/1000);
+        bool request_open=hh_valve_control_update(&proposed,now_ms,
+            light_valid && s.light_raw<HH_VALVE_OPEN_LIGHT_RAW,
+            (s.valid_mask & HH_VALID_SHT)!=0,s.inside_temp_c,
+            s.valve_state==HH_VALVE_OPEN);
+        if (request_open!=valve.open) {
             esp_err_t valve_err=hh_servo_set_valve(request_open);
-            if (valve_err==ESP_OK) valve_open=request_open;
+            if (valve_err==ESP_OK) valve=proposed;
             else ESP_LOGE(TAG,"Valve request failed: %s",esp_err_to_name(valve_err));
-        }
-        ESP_LOGI(TAG,"valve_target=%s light_valid=%d T=%.2f light_raw=%d water_raw=%d",
-            valve_open?"OPEN":"CLOSED",light_valid,(double)s.inside_temp_c,
-            s.light_raw,s.water_raw);
+        } else valve=proposed;
+        ESP_LOGI(TAG,"valve_target=%s light_valid=%d T=%.2f light_raw=%d water_raw=%d next_check_ms=%" PRIu64,
+            valve.open?"OPEN":"CLOSED",light_valid,(double)s.inside_temp_c,
+            s.light_raw,s.water_raw,valve.next_check_ms);
         wet1=hh_moisture_update(wet1,(s.valid_mask & HH_VALID_WICK)!=0,s.wick_raw);
         wet2=hh_moisture_update(wet2,s.wick2_valid,s.wick2_raw);
         s.moisture1_state=wet1; s.moisture2_state=wet2;
@@ -229,7 +273,7 @@ static void tcp_task(void *argument)
 void app_main(void)
 {
     esp_reset_reason_t reason=esp_reset_reason();
-    ESP_LOGI(TAG,"Reset reason=%d%s; servo GPIO%d; light-only valve test",(int)reason,
+    ESP_LOGI(TAG,"Reset reason=%d%s; servo GPIO%d; temperature/light valve control",(int)reason,
         reason==ESP_RST_BROWNOUT?" (BROWNOUT: supply voltage dropped)":"",HH_SERVO_GPIO);
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {

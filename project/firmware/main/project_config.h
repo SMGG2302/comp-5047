@@ -49,7 +49,7 @@
 #define HH_ENTER_READINGS 3
 #define HH_EXIT_READINGS 5
 #define HH_AUDIO_DURATION_MS 30000
-/* Light-only valve test; no automatic test sweep or timed cycling. */
+/* Temperature/light valve control; minute-based checks in shared/valve_control.h. */
 #define HH_ENABLE_SERVO 1
 #define HH_SERVO_GPIO 13
 #define HH_SERVO_MIN_US 1200

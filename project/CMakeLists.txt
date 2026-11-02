@@ -42,3 +42,7 @@ add_test(NAME moisture COMMAND test_moisture)
 add_executable(test_maintenance tests/test_maintenance.c)
 target_include_directories(test_maintenance PRIVATE shared)
 add_test(NAME maintenance COMMAND test_maintenance)
+
+add_executable(test_valve_control tests/test_valve_control.c)
+target_include_directories(test_valve_control PRIVATE shared)
+add_test(NAME valve_control COMMAND test_valve_control)

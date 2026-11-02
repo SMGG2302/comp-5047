@@ -26,7 +26,7 @@ const i18n = (() => {
   "导水布 · 左一": "Wicking cloth · Left 1",
   "导水布 · 左二": "Wicking cloth · Left 2",
   "未知": "Unknown",
-  "光照测试模式：光照 ADC <500 开阀，≥500 或光照无效时关阀，暂不判断温度。开阀满1分钟，任一路仍干燥则提示堵塞；低水位提示补水维护。": "Light test mode: open below 500 light ADC; close at 500 or above, or when light data is invalid. Temperature is not used. A cloth still dry after one minute fully open triggers a blockage alert; low water triggers a refill alert.",
+  "有效光照 ADC <500 且温度 >30°C 时开阀。完全打开后至少保持1分钟，此后每分钟检查温度：仅低于26°C时关阀，否则再保持1分钟。光照变化不终止已开始的周期；温度无效时保持开启，等待下次检查。满1分钟导水布仍干燥提示堵塞，低水位提示补水。": "Open when valid light ADC is below 500 and temperature is above 30°C. Hold fully open for at least 1 minute, then check temperature every minute: close only below 26°C; otherwise hold for another minute. Light changes do not end an active cycle. Invalid temperature keeps the valve open until a later check. Dry cloth after one minute triggers a blockage alert; low water triggers a refill alert.",
   "树屋占用 / PRESENCE": "SHELTER / PRESENCE",
   "等待数据": "Waiting for data",
   "尚未读取": "No reading yet",
