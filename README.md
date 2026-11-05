@@ -1,70 +1,82 @@
-# HollowHaven — Shelter Environment & Sound Monitor
+# HollowHaven
 
 English | [简体中文](README.zh-CN.md)
 
-Current v4 reference: [Chinese technical manual](docs/manuals/HollowHaven-Technical-Manual-Chinese.pdf) and [current setup](project/CURRENT_SETUP.md), covering wiring, router networking, port 8766, temperature- and light-controlled watering and maintenance alerts.
+An ESP32-based artificial tree-hollow prototype for exploring habitat care for the greater glider (*Petauroides volans*). HollowHaven combines environmental monitoring, local automatic drip control and distance-triggered audio recording with a bilingual dashboard. The project is a coursework prototype; long-term wildlife suitability and species-recognition accuracy have not been established.
 
-HollowHaven is an ESP32 prototype for studying tree-hollow shelter conditions for the Greater glider (*Petauroides volans*). It measures temperature, humidity, two wicking-cloth moisture channels, light, water level and distance. A nearby object triggers an approximately 30-second audio recording. A local dashboard displays telemetry, receives recordings and offers optional, manual audio analysis through an API.
+## Documentation
+
+Updated 6 November 2026. All three document sets are available as PDFs with editable LaTeX packages.
+
+| Document | Purpose | English | Chinese | LaTeX source |
+| --- | --- | --- | --- | --- |
+| Project report | Design rationale, implementation, evaluation and limitations | [PDF](docs/report/report-en.pdf) | [PDF](docs/report/report-zh.pdf) | [ZIP](docs/report/report-latex.zip) |
+| User manual | First-use quick guide, dashboard operation, maintenance and fault response | [PDF](docs/manuals/HollowHaven-User-Manual-English.pdf) | [PDF](docs/manuals/HollowHaven-User-Manual-Chinese.pdf) | [ZIP](docs/manuals/HollowHaven-User-Manual-LaTeX.zip) |
+| Technical manual | Architecture, wiring, assembly, software deployment and calibration | [PDF](docs/manuals/HollowHaven-Technical-Manual-English.pdf) | [PDF](docs/manuals/HollowHaven-Technical-Manual-Chinese.pdf) | [ZIP](docs/manuals/HollowHaven-Technical-Manual-LaTeX.zip) |
+
+For electrical connections, use the [pin-by-pin wiring table](docs/wiring/Wiring-Table.en.md) and [current setup](project/CURRENT_SETUP.md), and check the actual module markings. The technical manual includes an illustrative wiring image; some power stubs are visually separated from the pads. Mechanical dimensions and manufacturing details marked as pending still require completion.
+
+## Current capabilities
+
+- ESP32-WROOM-32 reads SHT3x temperature/humidity, two capacitive wick sensors, analog light and water-level sensors, VL53L0X distance and a SEN0487 microphone.
+- An MG90S servo controls gravity-fed water delivery to the external wicking layer. Control runs on the ESP32 independently of the receiving computer.
+- A proximity entry event triggers approximately 30 seconds of audio. Continuous presence does not repeatedly trigger entry recordings.
+- The local dashboard provides live states, trends, maintenance notifications, session CSV export, WAV playback/download/import and English/Chinese controls.
+- Audio analysis is optional and manually initiated through a configured provider. Results are unverified candidates, not confirmed animal identities.
 
 ## Quick start
 
-1. Follow the [hardware setup](project/README.md). Copy `project/firmware/main/wifi_credentials.example.h` to `wifi_credentials.h` and enter your router’s 2.4 GHz Wi-Fi credentials. This local credentials file is ignored by Git.
-2. Build and upload `project/firmware` with PlatformIO. See the hardware README for the Windows ASCII-path build helper and serial-port selection.
-3. Connect the computer to the same router. The computer may use Wi-Fi or Ethernet; client isolation must be disabled.
-4. With Node.js 18 or newer installed, run `node server.js` in `website`, or double-click `website/HollowHaven.cmd` on Windows. No `npm install` is required.
-5. Open [http://127.0.0.1:8766](http://127.0.0.1:8766). Leave Device IP as `auto` and click **Connect ESP32**. If discovery fails, enter the IPv4 address printed by the ESP32 serial monitor.
-6. Use the **English / 中文** selector in the header to change language. English is the default; the browser remembers your choice. Switching language keeps your connection, settings and audio playback intact.
-7. In **Sound archive**, play local recordings. To analyze one, configure your API in Settings and explicitly click **Upload & analyze audio**. Internet access is required for cloud analysis.
+### Prepare the device
 
-## Repository
+1. Follow the technical manual and [hardware setup](project/README.md). Use compatible 3.3 V sensor signals and an external regulated 5 V servo supply with a common ground.
+2. Copy `project/firmware/main/wifi_credentials.example.h` to `wifi_credentials.h` in the same folder and enter the local 2.4 GHz Wi-Fi credentials. The real credentials file is ignored by Git.
+3. Build and upload `project/firmware` with PlatformIO. Complete ground-level electrical, valve and water-path checks before installation. Firmware supports a primary network and an optional fallback.
 
-| Directory | Contents |
+### Start monitoring
+
+1. Connect the computer to the device's local network; Wi-Fi or Ethernet is suitable if the devices can communicate. Disable router client isolation.
+2. Install Node.js 18 or later. From `website`, run `node server.js`, or double-click `website/HollowHaven.cmd` on Windows. The server does not require `npm install`.
+3. Open [http://127.0.0.1:8766](http://127.0.0.1:8766). Save Device IP as `auto`, then connect. If discovery fails, use the actual IP from the device's serial output.
+4. Confirm that sensor readings and timestamps keep updating. Use the header language selector as needed. Configure an analysis provider only if audio analysis is required, then explicitly select a recording and upload it.
+5. Keep the computer awake and the server running for continuous reception. To stop reception on Windows, run `./stop.ps1` from `website` in PowerShell.
+
+Closing the browser leaves the server running. Stopping the server or losing the network does not stop ESP32 watering control. To stop the physical system, manually isolate water before disconnecting power: power loss does not guarantee valve closure.
+
+## Operating behaviour and limits
+
+| Area | Current behaviour |
 | --- | --- |
-| [project/](project/README.md) | ESP-IDF C firmware, wiring, shared protocols, native receivers and tests |
-| [website/](website/README.md) | Local Node.js service, bilingual dashboard, API integration and tests |
+| Network | Router station mode; UDP 9002 discovery, TCP 9000 telemetry and TCP 9001 audio. The web server binds to `127.0.0.1:8766`. |
+| Watering | Valid light ADC <500 and temperature >30°C request opening. After fully opening, hold at least 60 seconds and check every minute; close only below 26°C. Subsequent light changes do not end the cycle; invalid temperature keeps it open until a later check. |
+| Maintenance | Low water produces a refill notification, not automatic shutoff. A wick still dry after 60 seconds fully open produces a possible blockage notification. |
+| Observability | Valve status is a command, not measured position or flow. ADC values are not calibrated millilitres, lux or moisture percentages. A displayed “below 50 ml” label is not a volume measurement. |
+| Data gaps | The computer cannot record live telemetry while disconnected or asleep; full missing telemetry history is not backfilled. Device audio buffering is finite. |
+| Validation | Control temperatures are engineering settings, not validated animal comfort limits. Distance does not identify a species; audio does not cover ultrasonic bat identification. |
 
-[Draft.md](Draft.md) contains the proposal; [COURSE_BRIEF.md](COURSE_BRIEF.md) contains the course brief. The dashboard is a prototype debugging and research-data tool.
+There is no maximum watering duration or low-water interlock. Plan refilling and a manual isolation method. Diagnosis based on falling water level and an unresponsive moisture sensor remains a manual check, not an implemented combined automatic alarm. Detailed thresholds and calibration belong in the technical manual and source code.
 
-Wiring spreadsheet: [接线表.xlsx](接线表.xlsx).
+## Repository and evaluation data
 
-## Current hardware and control rules
+| Path | Contents |
+| --- | --- |
+| [project/](project/README.md) | ESP-IDF C firmware, shared control/protocol code, native receivers and tests |
+| [website/](website/README.md) | Node.js service, bilingual dashboard and tests |
+| [docs/manuals/](docs/manuals/) | User and technical manuals, PDFs and LaTeX archives |
+| [docs/report/](docs/report/) | Current bilingual project report and LaTeX archive |
+| [modeling/](modeling/) | Blender models: `HollowHaven_scaled.blend`, `box2.blend`, `funnel.blend` |
+| [Ten-day dataset](experiments/nest-microclimate-measurements/README.md) | Workbook, CSV records and standalone chart viewer |
+| [Draft.md](Draft.md), [idea/](idea/), [COURSE_BRIEF.md](COURSE_BRIEF.md) | Proposal, design history and course brief |
 
-The current board is ESP32-WROOM-32. See the [hardware README](project/README.md) for wiring.
+The team identifies the ten-day dataset as measured data. Its README records the correction of legacy simulation labels; collection dates, site, instruments, calibration and channel-level processing details remain to be supplied. The records alone do not establish wildlife-welfare benefits. The standalone dataset viewer is separate from the live dashboard. The older `docs/COMP5047_Project_report.pdf` is retained as a historical report; use `docs/report/` for the revised reports.
 
-- **Network:** router station mode; UDP 9002 discovery, TCP 9000 telemetry and TCP 9001 audio. The dashboard listens only on `127.0.0.1:8766`.
-- **Valve control:** valid light ADC <500 and temperature >30°C opens to 1200 μs. Once fully open, hold at least one minute, then check temperature once per minute: close to 2500 μs only below 26°C; otherwise hold another minute. Light changes do not end the cycle; invalid temperature holds until a later check. Starts closed; water level remains a maintenance alert.
-- **Moisture:** below 2000 is wet; 2300 or above is dry. Intermediate values retain the previous state. Uninitialized or invalid readings are unknown.
-- **Maintenance:** a cloth still dry after one minute fully open triggers a possible blockage alert. Water ADC below 50 triggers a refill alert; the “below 50 ml” label is a configured threshold, not a continuous volume measurement.
-- **Presence:** three consecutive readings below 190 mm mark possible occupancy; five at or above 220 mm clear it. Invalid distance readings do not imply departure.
+## Verification and local data
 
-Valve status reports the servo command, not a measured mechanical position. ADC moisture readings are not calibrated moisture percentages. Physical cooling, water flow and animal sound recognition require field validation. Infrared does not establish animal identity. Audio sampling does not cover ultrasonic bat identification.
+Run the dashboard tests from `website`:
 
-## Language and analysis results
-
-Navigation, live states, tooltips, maintenance alerts, charts, settings, logs and application errors support English and Chinese. New Gemini analyses are requested in the language selected when you start the upload. Existing AI results, filenames, custom-service labels and user-entered settings keep their original content; switching the interface does not translate or re-upload them.
-
-## Tests and local data
-
-```powershell
-cd website
+```sh
 node --test test.js i18n.test.js gemini.test.js
 ```
 
-The optional browser check is `node ui-check.js` (requires Playwright and Edge). Native C tests are documented in the [hardware README](project/README.md). Simulated tests do not replace physical sensor, valve, network or wildlife validation.
+The optional `node ui-check.js` browser check requires Playwright and Edge. Native C build/test instructions are in the [hardware README](project/README.md). Software tests do not replace hardware or field validation.
 
-Recordings, session data, API keys, local Wi-Fi credentials and build caches are excluded from Git. API keys are held only in the running server’s memory; a server restart clears them. Recordings upload only when explicitly requested. The VL53L0X driver retains its license and [provenance](project/firmware/components/st_tof/PROVENANCE.md).
-
-## User manuals and current status (2 November 2026)
-
-- [English user manual (PDF)](docs/manuals/HollowHaven-User-Manual-English.pdf)
-- [Chinese user manual (PDF)](docs/manuals/HollowHaven-User-Manual-Chinese.pdf)
-- [English manual source](docs/User-Manual.en.md) and [Chinese manual source](docs/用户手册.zh-CN.md)
-- [Ten-day measured data and English charts](experiments/nest-microclimate-measurements/README.md) (real measurements confirmed by the project team)
-
-The PDFs include clickable contents and bookmarks, setup, operation, maintenance, intended users and a minimal-intervention design principle. Section 7.3 describes manual diagnosis and replacement of an unresponsive capacitive sensor; this combined water-level/moisture fault criterion is not yet an automatic firmware or dashboard alarm.
-
-Firmware supports a primary Wi-Fi network and an optional fallback, trying three failed connection attempts before switching. Set credentials locally using the example header. Current valve control opens above 30°C with qualifying light and checks every minute after fully opening, closing only below 26°C. Low water does not automatically stop watering. The dashboard uses the Gemini Interactions API for manually requested analysis; API keys remain in process memory only.
-
-These documents are updated with project commits, not automatically from live sensor readings. The current setup and user manuals take precedence over older historical descriptions in the original technical manual.
-
-[Wiring table and diagram](docs/wiring/Wiring-Table.en.md)
+Telemetry is stored in `website/data/session_*.csv`, recordings in `website/recordings/`, and analysis results in `website/data/results.json`. Back up these local files. Runtime data, real Wi-Fi credentials, API keys and build caches are excluded from Git. API keys remain in server process memory and must be re-entered after restart. Uploading a recording requires explicit user action and may incur provider charges. The VL53L0X driver retains its [license and provenance](project/firmware/components/st_tof/PROVENANCE.md).
