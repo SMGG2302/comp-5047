@@ -91,7 +91,7 @@ ESP32 analog inputs must remain within 0-3.3 V. Verify each module's supply requ
 
 1. Check water availability, clear tubing, a dry electronics enclosure and secure mounting before applying power. The device commands the valve closed at startup; confirm that it closes mechanically.
 2. Connect the computer to the ESP32's local network. Double-click `HollowHaven.cmd` in the project's `website` folder.
-3. Open <http://127.0.0.1:8766/> for live device data. The separate `nest-microclimate-english.html` page contains simulated curves and does not receive sensor data.
+3. Open <http://127.0.0.1:8766/> for live device data. The separate `nest-microclimate-english.html` page displays saved measured curves and does not receive live sensor data.
 4. Set the device address to `auto`, save the settings and select Connect. If discovery fails, an administrator can read the IP address through USB serial and enter it manually.
 5. Confirm that the sensor channel is connected and readings keep updating. Review temperature, humidity, water level, both moisture sensors and valve status. An idle audio channel without new recordings does not necessarily indicate a fault.
 6. The dashboard supports English and Chinese. Select a recording and manually start audio analysis when needed. The API key is held only in the running server's memory and must be entered again after restart. External AI services may charge for requests.
@@ -99,6 +99,46 @@ ESP32 analog inputs must remain within 0-3.3 V. Verify each module's supply requ
 8. Run `./stop.ps1` in the `website` directory to stop reception. This does not shut off the tree-mounted device or its water supply.
 
 Discovery uses UDP 9002, telemetry uses TCP 9000 and audio uses TCP 9001. If a firewall blocks access, an administrator should configure local-network access for these ports. Public internet exposure is unnecessary.
+
+## 4A Dashboard walkthrough
+
+These are team-supplied screenshots of the running interface. Values show the capture-time state. IP addresses, model strings and filenames are examples of that configuration, not values to copy into another installation.
+
+### Live monitoring and CSV export
+
+![Figure U1 Live monitoring and shelter status](images/screen1.png)
+
+Open Live monitoring and confirm Receiving shelter data and a changing update time. Review water supply, sunlight, valve and both wick states. Hover or focus a status card to inspect readings. Open/Closed describes the command; confirm actual flow separately.
+
+Select Export session CSV to download the current Node.js session, not all historical sessions. Pause reception stops computer reception; reconnect to resume. It does not power off the ESP32 or stop its local watering logic, and missing telemetry is not backfilled.
+
+### Readings, trends and events
+
+![Figure U2 Presence, sensor readings and trends](images/screen2.png)
+
+Use the Environmental trends selector for temperature, relative humidity, distance or Sound RMS. The graph covers approximately the last 30 minutes of available readings. Gaps represent unavailable data, not zero values. Sound RMS is ADC amplitude, not decibels.
+
+Object detected nearby means the proximity condition was met, not that an animal species was identified. Entry triggers approximately 30 seconds of audio; wait for capture and transfer before checking the archive. The illustrated 149 mm is a captured reading, not a new threshold. Continuous presence does not repeatedly trigger entry.
+
+### Recordings, import and analysis
+
+![Figure U3 Recording archive and playback](images/screen3.png)
+
+Open Sound archive, search filenames and select a recording. Inspect duration, sample rate, channels, size and waveform. Play or seek using the audio controls; Download WAV saves a copy. Waveforms are automatically scaled and cannot compare absolute loudness between files. The pictured 8190 Hz belongs to that selected file.
+
+Use Import WAV for a complete 16-bit PCM WAV no larger than 8 MiB, mono or stereo, at 1000–192000 Hz. Import stores a local copy without automatically uploading it. The list shows up to 250 recent files; this display limit does not delete older recordings.
+
+Configure a provider first, then select a recording and choose Upload & analyze audio. Wait while Analyzing, please wait appears, then read the candidate, supporting evidence and uncertainty. Cloud analysis requires connectivity and valid account configuration. If it fails, check the provider, model, key and network; the local WAV remains available. AI candidate / Unverified is not confirmed species identity.
+
+### Connection and analysis settings
+
+![Figure U4 Connection and analysis settings](images/screen4.png)
+
+Open Connection & analysis. Usually keep Device IP set to auto. If discovery fails, enter the actual LAN address from the device serial output. Do not copy the screenshot address; the computer and device must be on an interoperable LAN.
+
+Choose Service provider and enter a Model name supported by that provider and available to your account. The screenshot model string is not a compatibility guarantee. For a custom service, enter its API address. Enter the API key, adjust candidate categories if needed, select Save settings and check the feedback. Categories supply context rather than training or validating a model.
+
+The key stays only in the running server memory and must be re-entered after restart. Select Clear existing key and save to remove it. Saving settings does not start analysis. Use the language selector at the top of the interface to switch English and Chinese.
 
 ## 5. Automatic drip control
 
@@ -193,7 +233,7 @@ For leakage, enclosure water ingress, a jammed servo or abnormal heating, safely
 - The ESP32 does not backfill a complete telemetry history for periods without reception. Document these gaps after reconnection.
 - Device audio uses limited circular storage, not a long-term archive. Regularly back up recordings received by the computer.
 - Log device ID, time, symptom, actual water level, relevant ADC readings, valve state, corrective action, replaced parts and retest results.
-- Store measured and simulated data separately with clear labels. The simulation page cannot determine whether field maintenance is needed.
+- Distinguish historical measurements from live readings. Historical charts cannot determine current field maintenance needs.
 - When changing computers, transfer project files, records and non-sensitive settings. Administrators should configure API keys and Wi-Fi passwords separately.
 
 ## 9. Pre-deployment checklist

@@ -59,7 +59,7 @@ Recordings, session data, API keys, local Wi-Fi credentials and build caches are
 - [English user manual (PDF)](docs/manuals/HollowHaven-User-Manual-English.pdf)
 - [Chinese user manual (PDF)](docs/manuals/HollowHaven-User-Manual-Chinese.pdf)
 - [English manual source](docs/User-Manual.en.md) and [Chinese manual source](docs/用户手册.zh-CN.md)
-- [Ten-day simulation data and English charts](experiments/nest-microclimate-simulation/README.md) (synthetic data, not field measurements)
+- [Ten-day measured data and English charts](experiments/nest-microclimate-simulation/README.md) (real measurements confirmed by the project team)
 
 The PDFs include clickable contents and bookmarks, setup, operation, maintenance, intended users and a minimal-intervention design principle. Section 7.3 describes manual diagnosis and replacement of an unresponsive capacitive sensor; this combined water-level/moisture fault criterion is not yet an automatic firmware or dashboard alarm.
 

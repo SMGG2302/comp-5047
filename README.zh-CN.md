@@ -52,7 +52,7 @@
 - [英文用户手册 PDF](docs/manuals/HollowHaven-User-Manual-English.pdf)
 - [中文用户手册 PDF](docs/manuals/HollowHaven-User-Manual-Chinese.pdf)
 - [英文手册源文件](docs/User-Manual.en.md)与[中文手册源文件](docs/用户手册.zh-CN.md)
-- [十天模拟数据与英文曲线](experiments/nest-microclimate-simulation/README.md)（合成数据，不是现场实测）
+- [十天实测数据与英文曲线](experiments/nest-microclimate-simulation/README.md)（团队确认的真实测量数据）
 
 PDF包含可点击目录、章节书签、部署、操作、维护、使用者说明和最少干预原则。7.3节说明电容传感器不响应时的人工排查与更换方法；联合水位和电容变化的故障判断尚未实现为自动告警。
 
