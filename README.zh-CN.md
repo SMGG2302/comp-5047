@@ -2,7 +2,7 @@
 
 [English](README.md) | 简体中文
 
-当前 v4 参考：[中文技术手册](HollowHaven_技术手册.md)及[当前配置](project/CURRENT_SETUP.md)，包括接线、路由器联网、8766网页端口、光照控阀与维护告警。
+当前 v4 参考：[中文技术手册](docs/manuals/HollowHaven-Technical-Manual-Chinese.pdf)及[当前配置](project/CURRENT_SETUP.md)，包括接线、路由器联网、8766网页端口、温度与光照联合控阀与维护告警。
 
 面向大袋鼯（Greater glider，*Petauroides volans*）树洞庇护环境的 ESP32 原型。采集温湿度、两路导水布湿度、光照、水位和距离；近物体进入时触发约 30 秒录音。电脑上的本地网页显示数据、保存录音，并支持手动调用音频分析 API。
 
@@ -59,3 +59,5 @@ PDF包含可点击目录、章节书签、部署、操作、维护、使用者�
 固件支持主用与备用Wi-Fi，连续三次连接失败后切换；真实凭据只在本地配置。当前控制在光照达标且温度超过30°C时开阀，完全打开后按分钟检查，仅低于26°C才关闭；低水位没有自动停水联锁。网页声音分析采用Gemini Interactions接口，由用户手动发起，密钥只保存在进程内存。
 
 README随项目提交人工更新，不会根据实时传感器数据自动更新。旧技术手册中的历史规则，以当前接线说明和新版用户手册为准。
+
+[接线表与接线图](docs/wiring/Wiring-Table.zh-CN.md)

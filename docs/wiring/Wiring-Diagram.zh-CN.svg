@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1250" viewBox="0 0 1600 1250"><rect width="1600" height="1250" fill="#f8fafc"/>
+<text x="50" y="52" font-family="Microsoft YaHei,Arial,sans-serif" font-size="32" fill="#172b3a">HollowHaven · ESP32-WROOM-32 接线图</text>
+<text x="50" y="88" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="#172b3a">按照片丝印定位；信号分配依据 cad07a9 固件。USB 朝下，图示为连接示意，非扩展板电路原理图。</text>
+<rect x="615" y="140" width="370" height="830" rx="12" fill="#172b3a" stroke="#8695a2"/>
+<rect x="672" y="205" width="255" height="210" rx="12" fill="#cbd5df" stroke="#8695a2"/>
+<text x="701" y="290" font-family="Microsoft YaHei,Arial,sans-serif" font-size="22" fill="#172b3a">ESP32-WROOM-32</text>
+<text x="718" y="326" font-family="Microsoft YaHei,Arial,sans-serif" font-size="21" fill="#172b3a">Wi-Fi + MCU</text>
+<text x="654" y="177" font-family="Microsoft YaHei,Arial,sans-serif" font-size="21" fill="white">照片中的 ESP32 + 扩展板</text>
+<rect x="743" y="895" width="120" height="55" rx="12" fill="#cbd5df" stroke="#8695a2"/>
+<text x="769" y="930" font-family="Microsoft YaHei,Arial,sans-serif" font-size="24" fill="#172b3a">USB</text>
+<circle cx="615" cy="460" r="6" fill="#f8c35c"/>
+<text x="634" y="466" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="white">VP / GPIO36</text>
+<circle cx="615" cy="510" r="6" fill="#f8c35c"/>
+<text x="634" y="516" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="white">VN / GPIO39</text>
+<circle cx="615" cy="560" r="6" fill="#f8c35c"/>
+<text x="634" y="566" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="white">D34 / GPIO34</text>
+<circle cx="615" cy="610" r="6" fill="#f8c35c"/>
+<text x="634" y="616" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="white">D32 / GPIO32</text>
+<circle cx="615" cy="660" r="6" fill="#f8c35c"/>
+<text x="634" y="666" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="white">D33 / GPIO33</text>
+<circle cx="615" cy="710" r="6" fill="#f8c35c"/>
+<text x="634" y="716" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="white">D26 / GPIO26</text>
+<circle cx="615" cy="760" r="6" fill="#f8c35c"/>
+<text x="634" y="766" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="white">D27 / GPIO27</text>
+<circle cx="615" cy="810" r="6" fill="#f8c35c"/>
+<text x="634" y="816" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="white">D13 / GPIO13</text>
+<circle cx="985" cy="460" r="6" fill="#f8c35c"/>
+<text x="830" y="466" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="white">D22 / GPIO22</text>
+<circle cx="985" cy="510" r="6" fill="#f8c35c"/>
+<text x="830" y="516" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="white">D21 / GPIO21</text>
+<circle cx="985" cy="810" r="6" fill="#f8c35c"/>
+<text x="830" y="816" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="white">3V3</text>
+<circle cx="985" cy="855" r="6" fill="#f8c35c"/>
+<text x="830" y="861" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="white">GND</text>
+<rect x="55" y="160" width="390" height="115" rx="12" fill="white" stroke="#8695a2"/>
+<text x="73" y="192" font-family="Microsoft YaHei,Arial,sans-serif" font-size="23" fill="#172b3a">湿度 2 · 导水布第二点</text>
+<text x="73" y="224" font-family="Microsoft YaHei,Arial,sans-serif" font-size="20" fill="#7855ad">AO → VP / GPIO36</text>
+<text x="73" y="252" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="#172b3a">VCC → 3V3    GND → 公共地</text>
+<polyline points="445,215 475,215 475,460 615,460" fill="none" stroke="#7855ad" stroke-width="3" stroke-linejoin="round"/>
+<rect x="55" y="315" width="390" height="115" rx="12" fill="white" stroke="#8695a2"/>
+<text x="73" y="347" font-family="Microsoft YaHei,Arial,sans-serif" font-size="23" fill="#172b3a">光照模块</text>
+<text x="73" y="379" font-family="Microsoft YaHei,Arial,sans-serif" font-size="20" fill="#b8860b">AO → VN / GPIO39</text>
+<text x="73" y="407" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="#172b3a">VCC → 3V3    GND → 公共地</text>
+<polyline points="445,370 498,370 498,510 615,510" fill="none" stroke="#b8860b" stroke-width="3" stroke-linejoin="round"/>
+<rect x="55" y="470" width="390" height="115" rx="12" fill="white" stroke="#8695a2"/>
+<text x="73" y="502" font-family="Microsoft YaHei,Arial,sans-serif" font-size="23" fill="#172b3a">湿度 1 · 导水布第一点</text>
+<text x="73" y="534" font-family="Microsoft YaHei,Arial,sans-serif" font-size="20" fill="#007b83">AO → D34 / GPIO34</text>
+<text x="73" y="562" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="#172b3a">VCC → 3V3    GND → 公共地</text>
+<polyline points="445,525 521,525 521,560 615,560" fill="none" stroke="#007b83" stroke-width="3" stroke-linejoin="round"/>
+<rect x="55" y="625" width="390" height="115" rx="12" fill="white" stroke="#8695a2"/>
+<text x="73" y="657" font-family="Microsoft YaHei,Arial,sans-serif" font-size="23" fill="#172b3a">水位模块</text>
+<text x="73" y="689" font-family="Microsoft YaHei,Arial,sans-serif" font-size="20" fill="#2875b8">AO → D32 / GPIO32</text>
+<text x="73" y="717" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="#172b3a">VCC → 3V3    GND → 公共地</text>
+<polyline points="445,680 544,680 544,610 615,610" fill="none" stroke="#2875b8" stroke-width="3" stroke-linejoin="round"/>
+<rect x="55" y="780" width="390" height="115" rx="12" fill="white" stroke="#8695a2"/>
+<text x="73" y="812" font-family="Microsoft YaHei,Arial,sans-serif" font-size="23" fill="#172b3a">SEN0487 麦克风</text>
+<text x="73" y="844" font-family="Microsoft YaHei,Arial,sans-serif" font-size="20" fill="#c45662">A / AO → D33 / GPIO33</text>
+<text x="73" y="872" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="#172b3a">VCC → 3V3    GND → 公共地</text>
+<polyline points="445,835 567,835 567,660 615,660" fill="none" stroke="#c45662" stroke-width="3" stroke-linejoin="round"/>
+<rect x="1120" y="160" width="425" height="145" rx="12" fill="white" stroke="#8695a2"/>
+<text x="1140" y="195" font-family="Microsoft YaHei,Arial,sans-serif" font-size="24" fill="#172b3a">SHT3x 温湿度</text>
+<text x="1140" y="230" font-family="Microsoft YaHei,Arial,sans-serif" font-size="20" fill="#172b3a">SDA → D21    SCL → D22</text>
+<text x="1140" y="266" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="#172b3a">VCC → 3V3    GND → 公共地</text>
+<polyline points="1120,220 1040,220 1040,510 985,510" fill="none" stroke="#16828b" stroke-width="3" stroke-linejoin="round"/>
+<polyline points="1120,250 1070,250 1070,460 985,460" fill="none" stroke="#e09c22" stroke-width="3" stroke-linejoin="round"/>
+<rect x="1120" y="360" width="425" height="145" rx="12" fill="white" stroke="#8695a2"/>
+<text x="1140" y="394" font-family="Microsoft YaHei,Arial,sans-serif" font-size="24" fill="#172b3a">VL53L0X 测距模块</text>
+<text x="1140" y="430" font-family="Microsoft YaHei,Arial,sans-serif" font-size="20" fill="#172b3a">SDA → D27    SCL → D26</text>
+<text x="1140" y="465" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="#172b3a">VIN → 3V3    GND → 公共地</text>
+<polyline points="1120,420 1090,420 1090,1000 565,1000 565,760 615,760" fill="none" stroke="#16828b" stroke-width="3" stroke-linejoin="round"/>
+<polyline points="1120,450 1060,450 1060,1020 540,1020 540,710 615,710" fill="none" stroke="#e09c22" stroke-width="3" stroke-linejoin="round"/>
+<rect x="1120" y="560" width="425" height="145" rx="12" fill="white" stroke="#8695a2"/>
+<text x="1140" y="594" font-family="Microsoft YaHei,Arial,sans-serif" font-size="24" fill="#172b3a">MG90S 舵机水阀</text>
+<text x="1140" y="630" font-family="Microsoft YaHei,Arial,sans-serif" font-size="20" fill="#172b3a">信号 → D13 / GPIO13</text>
+<text x="1140" y="665" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="#172b3a">电源 → 独立稳压 5V；GND 共地</text>
+<polyline points="1120,620 1035,620 1035,1040 515,1040 515,810 615,810" fill="none" stroke="#dc7436" stroke-width="3" stroke-linejoin="round"/>
+<rect x="1120" y="770" width="425" height="180" rx="12" fill="#fff4e3" stroke="#8695a2"/>
+<text x="1140" y="805" font-family="Microsoft YaHei,Arial,sans-serif" font-size="24" fill="#172b3a">电源连接</text>
+<text x="1140" y="842" font-family="Microsoft YaHei,Arial,sans-serif" font-size="19" fill="#172b3a">ESP32：开发板自身 USB 供电</text>
+<text x="1140" y="875" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="#172b3a">传感器：已确认兼容的 3.3V 模块</text>
+<text x="1140" y="908" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="#172b3a">舵机：5V 正极；负极接公共 GND</text>
+<polyline points="985,810 1010,810 1010,1100 1140,1100" fill="none" stroke="#d52b36" stroke-width="5" stroke-linejoin="round"/>
+<text x="1155" y="1107" font-family="Microsoft YaHei,Arial,sans-serif" font-size="19" fill="#c62828">红色：3V3，仅传感器</text>
+<polyline points="985,855 995,855 995,1140 1140,1140" fill="none" stroke="#25323b" stroke-width="5" stroke-linejoin="round"/>
+<text x="1155" y="1147" font-family="Microsoft YaHei,Arial,sans-serif" font-size="19" fill="#172b3a">黑色：公共 GND</text>
+<text x="55" y="1100" font-family="Microsoft YaHei,Arial,sans-serif" font-size="21" fill="#172b3a">接线须逐根对应“信号 / 电源 / 地”，不要按照片中杜邦线颜色推断功能。</text>
+<text x="55" y="1140" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="#172b3a">扩展板 V 排针电压、黄色跳帽档位及各插座内侧 S/V/G 顺序未确认：先断电查通断，再测电压。</text>
+<text x="55" y="1180" font-family="Microsoft YaHei,Arial,sans-serif" font-size="19" fill="#172b3a">图中 VCC/GND 文字也是必须连接的网络；同名网络相连。舵机 5V 不接 3V3。</text>
+<text x="55" y="1218" font-family="Microsoft YaHei,Arial,sans-serif" font-size="19" fill="#172b3a">DS18B20、D35、TX0/RX0 不用于本配置；VP=GPIO36，VN=GPIO39。</text>
+</svg>

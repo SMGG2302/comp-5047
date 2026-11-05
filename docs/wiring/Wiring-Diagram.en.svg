@@ -1,0 +1,91 @@
+<?xml version='1.0' encoding='utf-8'?>
+<ns0:svg xmlns:ns0="http://www.w3.org/2000/svg" width="1600" height="1250" viewBox="0 0 1600 1250"><ns0:rect width="1600" height="1250" fill="#f8fafc" />
+<ns0:text x="50" y="52" font-family="Microsoft YaHei,Arial,sans-serif" font-size="32" fill="#172b3a">HollowHaven · ESP32-WROOM-32 Wiring</ns0:text>
+<ns0:text x="50" y="88" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="#172b3a">Photo labels; firmware cad07a9. USB faces down. Connection diagram, not the baseboard circuit schematic.</ns0:text>
+<ns0:rect x="615" y="140" width="370" height="830" rx="12" fill="#172b3a" stroke="#8695a2" />
+<ns0:rect x="672" y="205" width="255" height="210" rx="12" fill="#cbd5df" stroke="#8695a2" />
+<ns0:text x="701" y="290" font-family="Microsoft YaHei,Arial,sans-serif" font-size="22" fill="#172b3a">ESP32-WROOM-32</ns0:text>
+<ns0:text x="718" y="326" font-family="Microsoft YaHei,Arial,sans-serif" font-size="21" fill="#172b3a">Wi-Fi + MCU</ns0:text>
+<ns0:text x="654" y="177" font-family="Microsoft YaHei,Arial,sans-serif" font-size="21" fill="white">ESP32 + expansion baseboard</ns0:text>
+<ns0:rect x="743" y="895" width="120" height="55" rx="12" fill="#cbd5df" stroke="#8695a2" />
+<ns0:text x="769" y="930" font-family="Microsoft YaHei,Arial,sans-serif" font-size="24" fill="#172b3a">USB</ns0:text>
+<ns0:circle cx="615" cy="460" r="6" fill="#f8c35c" />
+<ns0:text x="634" y="466" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="white">VP / GPIO36</ns0:text>
+<ns0:circle cx="615" cy="510" r="6" fill="#f8c35c" />
+<ns0:text x="634" y="516" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="white">VN / GPIO39</ns0:text>
+<ns0:circle cx="615" cy="560" r="6" fill="#f8c35c" />
+<ns0:text x="634" y="566" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="white">D34 / GPIO34</ns0:text>
+<ns0:circle cx="615" cy="610" r="6" fill="#f8c35c" />
+<ns0:text x="634" y="616" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="white">D32 / GPIO32</ns0:text>
+<ns0:circle cx="615" cy="660" r="6" fill="#f8c35c" />
+<ns0:text x="634" y="666" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="white">D33 / GPIO33</ns0:text>
+<ns0:circle cx="615" cy="710" r="6" fill="#f8c35c" />
+<ns0:text x="634" y="716" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="white">D26 / GPIO26</ns0:text>
+<ns0:circle cx="615" cy="760" r="6" fill="#f8c35c" />
+<ns0:text x="634" y="766" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="white">D27 / GPIO27</ns0:text>
+<ns0:circle cx="615" cy="810" r="6" fill="#f8c35c" />
+<ns0:text x="634" y="816" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="white">D13 / GPIO13</ns0:text>
+<ns0:circle cx="985" cy="460" r="6" fill="#f8c35c" />
+<ns0:text x="830" y="466" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="white">D22 / GPIO22</ns0:text>
+<ns0:circle cx="985" cy="510" r="6" fill="#f8c35c" />
+<ns0:text x="830" y="516" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="white">D21 / GPIO21</ns0:text>
+<ns0:circle cx="985" cy="810" r="6" fill="#f8c35c" />
+<ns0:text x="830" y="816" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="white">3V3</ns0:text>
+<ns0:circle cx="985" cy="855" r="6" fill="#f8c35c" />
+<ns0:text x="830" y="861" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="white">GND</ns0:text>
+<ns0:rect x="55" y="160" width="390" height="115" rx="12" fill="white" stroke="#8695a2" />
+<ns0:text x="73" y="192" font-family="Microsoft YaHei,Arial,sans-serif" font-size="23" fill="#172b3a">Moisture 2 · second point</ns0:text>
+<ns0:text x="73" y="224" font-family="Microsoft YaHei,Arial,sans-serif" font-size="20" fill="#7855ad">AO → VP / GPIO36</ns0:text>
+<ns0:text x="73" y="252" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="#172b3a">VCC → 3V3    GND → common ground</ns0:text>
+<ns0:polyline points="445,215 475,215 475,460 615,460" fill="none" stroke="#7855ad" stroke-width="3" stroke-linejoin="round" />
+<ns0:rect x="55" y="315" width="390" height="115" rx="12" fill="white" stroke="#8695a2" />
+<ns0:text x="73" y="347" font-family="Microsoft YaHei,Arial,sans-serif" font-size="23" fill="#172b3a">Analogue light module</ns0:text>
+<ns0:text x="73" y="379" font-family="Microsoft YaHei,Arial,sans-serif" font-size="20" fill="#b8860b">AO → VN / GPIO39</ns0:text>
+<ns0:text x="73" y="407" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="#172b3a">VCC → 3V3    GND → common ground</ns0:text>
+<ns0:polyline points="445,370 498,370 498,510 615,510" fill="none" stroke="#b8860b" stroke-width="3" stroke-linejoin="round" />
+<ns0:rect x="55" y="470" width="390" height="115" rx="12" fill="white" stroke="#8695a2" />
+<ns0:text x="73" y="502" font-family="Microsoft YaHei,Arial,sans-serif" font-size="23" fill="#172b3a">Moisture 1 · first point</ns0:text>
+<ns0:text x="73" y="534" font-family="Microsoft YaHei,Arial,sans-serif" font-size="20" fill="#007b83">AO → D34 / GPIO34</ns0:text>
+<ns0:text x="73" y="562" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="#172b3a">VCC → 3V3    GND → common ground</ns0:text>
+<ns0:polyline points="445,525 521,525 521,560 615,560" fill="none" stroke="#007b83" stroke-width="3" stroke-linejoin="round" />
+<ns0:rect x="55" y="625" width="390" height="115" rx="12" fill="white" stroke="#8695a2" />
+<ns0:text x="73" y="657" font-family="Microsoft YaHei,Arial,sans-serif" font-size="23" fill="#172b3a">Water-level module</ns0:text>
+<ns0:text x="73" y="689" font-family="Microsoft YaHei,Arial,sans-serif" font-size="20" fill="#2875b8">AO → D32 / GPIO32</ns0:text>
+<ns0:text x="73" y="717" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="#172b3a">VCC → 3V3    GND → common ground</ns0:text>
+<ns0:polyline points="445,680 544,680 544,610 615,610" fill="none" stroke="#2875b8" stroke-width="3" stroke-linejoin="round" />
+<ns0:rect x="55" y="780" width="390" height="115" rx="12" fill="white" stroke="#8695a2" />
+<ns0:text x="73" y="812" font-family="Microsoft YaHei,Arial,sans-serif" font-size="23" fill="#172b3a">SEN0487 microphone</ns0:text>
+<ns0:text x="73" y="844" font-family="Microsoft YaHei,Arial,sans-serif" font-size="20" fill="#c45662">A / AO → D33 / GPIO33</ns0:text>
+<ns0:text x="73" y="872" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="#172b3a">VCC → 3V3    GND → common ground</ns0:text>
+<ns0:polyline points="445,835 567,835 567,660 615,660" fill="none" stroke="#c45662" stroke-width="3" stroke-linejoin="round" />
+<ns0:rect x="1120" y="160" width="425" height="145" rx="12" fill="white" stroke="#8695a2" />
+<ns0:text x="1140" y="195" font-family="Microsoft YaHei,Arial,sans-serif" font-size="24" fill="#172b3a">SHT3x temperature / RH</ns0:text>
+<ns0:text x="1140" y="230" font-family="Microsoft YaHei,Arial,sans-serif" font-size="17" fill="#172b3a">SDA → D21    SCL → D22</ns0:text>
+<ns0:text x="1140" y="266" font-family="Microsoft YaHei,Arial,sans-serif" font-size="17" fill="#172b3a">VCC → 3V3    GND → common ground</ns0:text>
+<ns0:polyline points="1120,220 1040,220 1040,510 985,510" fill="none" stroke="#16828b" stroke-width="3" stroke-linejoin="round" />
+<ns0:polyline points="1120,250 1070,250 1070,460 985,460" fill="none" stroke="#e09c22" stroke-width="3" stroke-linejoin="round" />
+<ns0:rect x="1120" y="360" width="425" height="145" rx="12" fill="white" stroke="#8695a2" />
+<ns0:text x="1140" y="394" font-family="Microsoft YaHei,Arial,sans-serif" font-size="24" fill="#172b3a">VL53L0X distance module</ns0:text>
+<ns0:text x="1140" y="430" font-family="Microsoft YaHei,Arial,sans-serif" font-size="17" fill="#172b3a">SDA → D27    SCL → D26</ns0:text>
+<ns0:text x="1140" y="465" font-family="Microsoft YaHei,Arial,sans-serif" font-size="17" fill="#172b3a">VIN → 3V3    GND → common ground</ns0:text>
+<ns0:polyline points="1120,420 1090,420 1090,1000 565,1000 565,760 615,760" fill="none" stroke="#16828b" stroke-width="3" stroke-linejoin="round" />
+<ns0:polyline points="1120,450 1060,450 1060,1020 540,1020 540,710 615,710" fill="none" stroke="#e09c22" stroke-width="3" stroke-linejoin="round" />
+<ns0:rect x="1120" y="560" width="425" height="145" rx="12" fill="white" stroke="#8695a2" />
+<ns0:text x="1140" y="594" font-family="Microsoft YaHei,Arial,sans-serif" font-size="24" fill="#172b3a">MG90S valve servo</ns0:text>
+<ns0:text x="1140" y="630" font-family="Microsoft YaHei,Arial,sans-serif" font-size="17" fill="#172b3a">Signal → D13 / GPIO13</ns0:text>
+<ns0:text x="1140" y="665" font-family="Microsoft YaHei,Arial,sans-serif" font-size="17" fill="#172b3a">Separate regulated 5V; common GND</ns0:text>
+<ns0:polyline points="1120,620 1035,620 1035,1040 515,1040 515,810 615,810" fill="none" stroke="#dc7436" stroke-width="3" stroke-linejoin="round" />
+<ns0:rect x="1120" y="770" width="425" height="180" rx="12" fill="#fff4e3" stroke="#8695a2" />
+<ns0:text x="1140" y="805" font-family="Microsoft YaHei,Arial,sans-serif" font-size="24" fill="#172b3a">Power connections</ns0:text>
+<ns0:text x="1140" y="842" font-family="Microsoft YaHei,Arial,sans-serif" font-size="17" fill="#172b3a">ESP32: board USB from power bank</ns0:text>
+<ns0:text x="1140" y="875" font-family="Microsoft YaHei,Arial,sans-serif" font-size="17" fill="#172b3a">Sensors: verified 3.3V-compatible modules</ns0:text>
+<ns0:text x="1140" y="908" font-family="Microsoft YaHei,Arial,sans-serif" font-size="17" fill="#172b3a">Servo: +5V; negative to common GND</ns0:text>
+<ns0:polyline points="985,810 1010,810 1010,1100 1140,1100" fill="none" stroke="#d52b36" stroke-width="5" stroke-linejoin="round" />
+<ns0:text x="1155" y="1107" font-family="Microsoft YaHei,Arial,sans-serif" font-size="17" fill="#c62828">Red: 3V3, sensors only</ns0:text>
+<ns0:polyline points="985,855 995,855 995,1140 1140,1140" fill="none" stroke="#25323b" stroke-width="5" stroke-linejoin="round" />
+<ns0:text x="1155" y="1147" font-family="Microsoft YaHei,Arial,sans-serif" font-size="17" fill="#172b3a">Black: common GND</ns0:text>
+<ns0:text x="55" y="1100" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="#172b3a">Match signal, supply and ground at both ends. Actual wire colours do not establish function.</ns0:text>
+<ns0:text x="55" y="1140" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="#172b3a">V-rail voltage, yellow jumper and S/V/G order are unconfirmed: check continuity off, then voltage on.</ns0:text>
+<ns0:text x="55" y="1180" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="#172b3a">VCC/GND labels are required connections. Join same-name nets. Never connect servo 5V to 3V3.</ns0:text>
+<ns0:text x="55" y="1218" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" fill="#172b3a">DS18B20, D35 and TX0/RX0 are unused here. VP = GPIO36; VN = GPIO39.</ns0:text>
+</ns0:svg>

@@ -2,7 +2,7 @@
 
 English | [简体中文](README.zh-CN.md)
 
-Current v4 reference: [Chinese technical manual](HollowHaven_技术手册.md) and [current setup](project/CURRENT_SETUP.md), covering wiring, router networking, port 8766, temperature- and light-controlled watering and maintenance alerts.
+Current v4 reference: [Chinese technical manual](docs/manuals/HollowHaven-Technical-Manual-Chinese.pdf) and [current setup](project/CURRENT_SETUP.md), covering wiring, router networking, port 8766, temperature- and light-controlled watering and maintenance alerts.
 
 HollowHaven is an ESP32 prototype for studying tree-hollow shelter conditions for the Greater glider (*Petauroides volans*). It measures temperature, humidity, two wicking-cloth moisture channels, light, water level and distance. A nearby object triggers an approximately 30-second audio recording. A local dashboard displays telemetry, receives recordings and offers optional, manual audio analysis through an API.
 
@@ -66,3 +66,5 @@ The PDFs include clickable contents and bookmarks, setup, operation, maintenance
 Firmware supports a primary Wi-Fi network and an optional fallback, trying three failed connection attempts before switching. Set credentials locally using the example header. Current valve control opens above 30°C with qualifying light and checks every minute after fully opening, closing only below 26°C. Low water does not automatically stop watering. The dashboard uses the Gemini Interactions API for manually requested analysis; API keys remain in process memory only.
 
 These documents are updated with project commits, not automatically from live sensor readings. The current setup and user manuals take precedence over older historical descriptions in the original technical manual.
+
+[Wiring table and diagram](docs/wiring/Wiring-Table.en.md)
