@@ -8,7 +8,7 @@ Open [index.html](index.html) in a browser to view the English temperature and r
 - [Full-day CSV](full-day-5-minute-data.csv): 2,880 records, one every five minutes over ten days.
 - [Observation-window CSV](observation-window-5-minute-data.csv): 960 records, 09:00–16:55 each day, including the two cloudy days.
 
-The project team confirms that this dataset contains real measurements. Previous SIMULATED labels and model-origin descriptions were legacy documentation errors, corrected on 5 November 2026 at the team's direction. Recorded numerical values are unchanged. The existing directory name is retained for link compatibility.
+The project team confirms that this dataset contains real measurements. Previous SIMULATED labels and model-origin descriptions were legacy documentation errors, corrected on 5 November 2026 at the team's direction. Recorded numerical values are unchanged.
 
 The dataset compares ambient conditions, a standard nest box, a natural hollow, and artificial-hollow conditions with and without dripping. Derived quantities should be distinguished from direct instrument readings. Collection dates, location, instruments, calibration and channel-level processing details remain to be supplied by the team. These records do not alone establish wildlife welfare benefits or thermal equivalence.
 
