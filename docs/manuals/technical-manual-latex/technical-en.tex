@@ -5,8 +5,8 @@
 \setCJKmainfont{Microsoft YaHei}
 \usepackage{graphicx,tikz,longtable,array,booktabs,amssymb,setspace,titlesec,fancyhdr,lastpage,hyperref}
 \hypersetup{hidelinks,pdftitle={HollowHaven Technical Manual}}
-\setstretch{1.65}
-\setlength{\parindent}{0pt}\setlength{\parskip}{7pt}
+\setstretch{1.3}
+\setlength{\parindent}{0pt}\setlength{\parskip}{5pt}
 \setlength{\emergencystretch}{3em}
 \titleformat{\section}{\Large\bfseries}{\thesection.}{.5em}{}[\vspace{5pt}\titlerule]
 \titleformat{\subsection}{\large\bfseries}{\thesubsection}{.5em}{}
@@ -34,201 +34,464 @@
 \clearpage
 \renewcommand{\contentsname}{Contents}
 \begingroup\setstretch{1.05}\small\setcounter{tocdepth}{1}\tableofcontents\endgroup\clearpage
-Wiring and Replication Guide · Version 5 November 2026. Signal assignments follow project\_config.h, project/README.md and CURRENT\_SETUP.md at Git revision e40f8b5. Board labels are based on the team's photographs. The 3D enclosure information remains as placeholders at the team's request; exact physical replication requires those details.
-
-
-Revision: 2026-11-06. Reorganized into eight chapters; original cover and contents styling retained.
+Version: 2026-11-06. English translation of the revised Chinese edition; technical baseline: Git e40f8b5. The manual covers the system, technology stack, hardware, software, structure, assembly, testing and replication. Missing dimensions and measured results remain explicitly pending.
 \section{Project introduction and technical objectives}
-HollowHaven is a course prototype for integrating environmental monitoring, automatic gravity-fed watering and event-triggered audio recording in an artificial-hollow concept for Greater Gliders. The system combines ESP32 sensing and local control, a Node.js service and a browser dashboard. Blender models and a layered enclosure support physical integration. Cooling performance and long-term wildlife suitability still require experimental validation.
+
+HollowHaven is a course prototype developed for an artificial-hollow shelter concept for Greater Gliders. It explores the integration of environmental monitoring, automatic drip watering and visitor-event recording in one device. An ESP32 collects environmental and equipment data, operates a servo-controlled gravity-fed water supply, and sends data to a computer dashboard for observation and recording.
+
+
+The enclosure combines Blender modelling with layered assembly: a perforated structural layer, a capillary water-distribution layer and an outer bark layer. The structure provides mounting locations for the entrance, sensors and water system; the absorbent material distributes water and the bark forms the exterior covering.
+
+
+\subsection{Three main functional chains}
+
+\begin{longtable}{p{42mm}p{59mm}p{58mm}}
+\toprule
+\textbf{Function} & \textbf{Input and processing} & \textbf{Output}\\\midrule\endhead
+Environmental monitoring & Temperature, humidity, light, water level and two material-moisture measurements & Dashboard status, trends, CSV records and maintenance alerts\\
+Automatic drip watering & Valid light and temperature conditions start the servo valve; temperature is checked periodically & Gravity-fed watering and command status; moisture probes help check water-delivery response\\
+Visitor-event recording & Consecutive distance readings confirm a possible entry & Approximately 30 seconds of recording, WAV storage and optional user-initiated audio analysis\\
+\bottomrule\end{longtable}
+
+\subsection{Technical objectives and validation scope}
+
+The technical objective is to connect sensor acquisition, local device control, LAN transmission, computer storage and browser display, and integrate the electronics into the layered enclosure. Evaluation should establish whether these stages work together consistently, repeatably and maintainably.
+
+
+The available materials support descriptions of implemented code and assembly relationships shown in photographs. They do not establish a verified temperature reduction, long-term waterproofing or suitability for wildlife. Distance events and audio analysis provide observational clues rather than species identification.
+
+
+\subsection{Expected reader outcomes}
+
+Readers should be able to explain each technical layer, assemble a bench prototype using the wiring table, deploy the specified software version, check basic functions and identify the dimensional and fabrication information needed for complete mechanical replication.
+
 
 \clearpage
 \section{System architecture and technology stack}
 
-HollowHaven is a coursework functional prototype integrating sensing, automatic water delivery and event observation. It has not been validated as a long-term wildlife shelter. This manual explains the current implementation for builders and technical maintainers, alongside wiring, deployment and acceptance. Routine dashboard operation and maintenance belong in HollowHaven-User-Manual-English.pdf; the Chinese counterpart is HollowHaven-User-Manual-Chinese.pdf.
+\subsection{System responsibilities}
 
-The implementation path is sensors $\rightarrow$ ESP32 acquisition and local control $\rightarrow$ TCP over a shared router network $\rightarrow$ Node.js validation and storage $\rightarrow$ browser monitoring. Valve decisions run on the ESP32. Computer disconnection interrupts reception but does not stop device-side control.
+\begin{center}
+\begin{tikzpicture}[every node/.style={draw,rounded corners,align=center,minimum width=36mm,minimum height=17mm,font=\small}]
+\node (a) at (0,0) {Sensors / valve\\Acquisition / PWM};
+\node (b) at (4.2,0) {ESP32 firmware\\Control / recording};
+\node (c) at (8.4,0) {Node.js service\\Validation / storage};
+\node (d) at (12.6,0) {Browser\\Display / interaction};
+\draw[->] (a)--(b);\draw[->] (b)--(c);\draw[->] (c)--(d);
+\node (e) at (8.4,-2) {Optional audio analysis\\User-initiated};
+\draw[->] (c)--(e);
+\end{tikzpicture}
+\end{center}
 
-\begin{longtable}{p{49.333333333333336mm} p{49.333333333333336mm} p{49.333333333333336mm}}\toprule
-\textbf{Layer} & \textbf{Current implementation} & \textbf{Responsibility}\\\midrule\endhead
-Structure and water & Prototype body, elevated reservoir, servo valve and external wick & Gravity delivery and capillary spreading; wet layer separated from the cavity\\
-Device & ESP32; ESP-IDF C firmware built with PlatformIO & I²C/ADC acquisition, moisture states, PWM, distance events and recordings\\
-Local service & website/server.js; Node.js & Discovery, TCP reception, CSV/WAV storage, browser APIs and analysis requests\\
-Browser & website/public/app.js, control-view.js and index.html & Live states, trends, maintenance indicators, archive and settings\\
-Optional external service & Manually requested audio analysis & Candidate interpretations; no valve control or confirmed species identification\\
+Figure 1. System architecture. Boxes follow the data-processing sequence. Valve control runs on the device; optional audio analysis is initiated by the user.
+
+
+\begin{longtable}{p{42mm}p{59mm}p{58mm}}
+\toprule
+\textbf{Layer} & \textbf{Current technology} & \textbf{Responsibility}\\\midrule\endhead
+Hardware & ESP32-WROOM-32, sensors, MG90S servo & Physical measurements and valve actuation\\
+Firmware & C, ESP-IDF, PlatformIO & I²C / ADC acquisition, PWM, state machines and audio buffering\\
+Communication & Wi-Fi LAN, UDP, TCP & Discovery, telemetry and audio transfer\\
+Local service & Node.js & Device connections, protocol validation, file storage and web interfaces\\
+Browser & HTML, CSS, JavaScript & Live status, trends, recordings and settings\\
+Data & CSV, WAV, JSON & Telemetry, audio, analysis results and non-sensitive settings\\
+Structural design & Blender and layered enclosure assembly & Curved shell, ventilation, water distribution and exterior covering\\
 \bottomrule\end{longtable}
+
+\subsection{Architectural choices and operating boundaries}
+
+Local device control makes valve decisions independent of whether the dashboard is open. The computer receives, stores and displays data. Disconnecting it interrupts reception but does not stop device-side control. The system cannot recover a complete history of telemetry collected while offline.
+
+
+Telemetry and audio use separate TCP connections to handle status data and audio files. The browser accesses the local Node.js service rather than reading sensors directly. Optional audio analysis is proxied by the service, and its results do not influence valve decisions.
+
 
 \clearpage
 \section{Hardware design and implementation}
 
-Prepare one classic ESP32-WROOM-32 development board and the photographed expansion baseboard; one SHT3x module, one VL53L0X module and one SEN0487 microphone; two capacitive moisture modules; one analogue light module, one water-level module and one MG90S servo. Also prepare wicking material, a reservoir, tubing, a valve mechanism compatible with the servo, jumper wires, a USB data cable, a power bank, a multimeter, a computer and mounting hardware.
+\subsection{Components and purposes}
 
-Exact purchasing references, connector dimensions and valve model: [TO BE COMPLETED]. Confirm that the modules support 3.3 V power and signals. A bare sensor chip is not a direct replacement for a breakout module with its supporting circuitry.
-
-Tools: multimeter, insulated tools, small screwdriver and cable ties. Assemble and test the electronics and software on the bench before fitting the enclosure. Verify the dry assembly before introducing water.
-
-
-Orient the board with its USB connector at the bottom and its metal shield towards the top. Labels visible on the left include VP, VN, D34, D35, D32, D33, D25, D26, D27, D14, D12 and D13. D22 and D21 are visible on the right. On this board, D-number labels refer to the corresponding GPIO number. VP is GPIO36 and VN is GPIO39. VP is not a positive power terminal.
-
-These are GPIO numbers, not the computer's COM port. The COM identifier can change with the computer or USB port and must be identified before flashing. The photographs establish labels and some connector locations, but do not reveal every obscured wire endpoint. The diagram represents the connections required by the firmware.
-
-Some D21/D22 connectors may be duplicate breakouts; verify continuity with power disconnected. The baseboard schematic is unavailable, so do not assume the inner-to-outer S/V/G order. Identify ground, supply and signal before attaching modules.
-
-
-The embedded diagram shows coloured signal paths. VCC/GND labels beneath each module identify additional required power connections; identically named networks connect together. Colours are illustrative and do not identify the actual jumper wires. Verify terminal labels at both ends of every connection.
-
-\par\vspace{2mm}\noindent\begin{minipage}{\linewidth}\centering\includegraphics[width=\linewidth,keepaspectratio]{wiring-realistic.png}\par{\small Wiring diagram}\end{minipage}\par\vspace{2mm}
-Power the ESP32 development board through its USB connector from a standard regulated 5 V USB external supply such as a power bank. Use a computer USB data cable for flashing. Compatible sensors use 3.3 V; the servo uses 5 V with common ground, as shown below.
-
-\begin{longtable}{p{49.333333333333336mm} p{49.333333333333336mm} p{49.333333333333336mm}}\toprule
-\textbf{Module terminal} & \textbf{ESP32 terminal} & \textbf{Notes}\\\midrule\endhead
-SHT3x SDA / SCL & D21 / D22 & First I²C bus; do not interchange the two wires\\
-SHT3x VCC / GND & 3V3 / GND & Use a 3.3 V-compatible module\\
-Moisture 1 AO / VCC / GND & D34 / 3V3 / GND & First wicking-material location\\
-Moisture 2 AO / VCC / GND & VP (GPIO36) / 3V3 / GND & Neither D35 nor VN\\
-Light AO / VCC / GND & VN (GPIO39) / 3V3 / GND & Use analogue AO, not digital DO\\
-Water level AO / VCC / GND & D32 / 3V3 / GND & 3.3 V-compatible module; reading is not continuous volume\\
-SEN0487 A / VCC / GND & D33 / 3V3 / GND & Analogue microphone output\\
-VL53L0X SDA / SCL & D27 / D26 & Separate second I²C bus\\
-VL53L0X VIN / GND & 3V3 / GND & Compatible breakout; leave XSHUT and GPIO1 unused\\
-MG90S signal & D13 & PWM; verify the manufacturer's terminal identification\\
-MG90S positive supply & Separate regulated 5 V branch & Do not connect to ESP32 3V3\\
-MG90S supply negative & Common GND & Connect to ESP32 ground\\
+\begin{longtable}{p{42mm}p{59mm}p{58mm}}
+\toprule
+\textbf{Component} & \textbf{Quantity} & \textbf{Interface and purpose}\\\midrule\endhead
+ESP32-WROOM-32 development board and matching expansion board & One each & Acquisition, control and Wi-Fi\\
+SHT3x temperature/humidity module & One & First I²C bus; cavity-air measurements\\
+VL53L0X distance module & One & Second I²C bus; entrance-area distance\\
+Capacitive moisture module & Two & ADC; wetting response at different material locations\\
+Analogue light and water-level modules & One each & ADC; opening condition and refill alert\\
+SEN0487 microphone & One & Analogue audio and sound statistics\\
+MG90S servo and valve mechanism & One each & PWM-driven mechanical valve\\
+Tank, tubing, capillary matting and fasteners & As required by the structure & Gravity delivery, distribution and mounting\\
 \bottomrule\end{longtable}
-DS18B20 is not connected and its D4 function is disabled. TX0/RX0 are not used for these sensors. All analogue signals must remain within 0–3.3 V. A module with a 5 V output requires an appropriate level interface before connection.
+
+Confirm the supply and output levels of complete modules before purchase; a bare chip cannot directly replace a module. Exact purchased light, water-level and capacitive-moisture module models, valve and connector specifications remain to be documented. Tools should include a USB data cable, multimeter, small screwdriver, insulation materials and cable ties.
 
 
-SHT3x measures cavity temperature and humidity on one I²C bus; VL53L0X measures distance on another. Light, water level, both wick probes and the microphone use ADC1, avoiding the classic ESP32 Wi-Fi/ADC2 conflict. Raw ADC counts are not lux, millilitres, moisture percentage or sound pressure level. External DS18B20 measurement is disabled.
+\subsection{Power and interface design}
 
-The prototype uses an elevated reservoir, gravity-fed tubing and a servo-operated valve to supply an external wicking layer. Capillary action distributes water; evaporation may reduce heat transfer into the cavity under suitable humidity and airflow. Bark-like covering supports shading and ecological context, but appearance cannot establish insulation or cooling performance. Rain collection, where retained, is a design intention until collection efficiency, filtration and overflow are measured. Exact mechanical dimensions await team measurements.
+Power the ESP32 through its onboard USB connector from a regulated 5V USB source. Use 3.3V-compatible sensor modules. Supply the MG90S from a separate regulated 5V branch with a common ground to the ESP32, not from 3V3. Validate the supply against the actual servo load and voltage drop during movement.
 
-Valid light and temperature initiate watering; a minimum open duration and periodic temperature decisions maintain the cycle. Two wick probes check water arrival at separate locations, raising a possible supply fault when dryness persists after full opening. Water level independently requests refilling. Commanded position, material wetting and measured flow are different evidence: the system has neither a flow meter nor mechanical position feedback. Thresholds appear in the control section below.
+
+Keep all analogue inputs within 0–3.3V and use AO outputs. Analogue acquisition uses ADC1 to avoid the classic ESP32's ADC2 resource conflict during Wi-Fi operation. Temperature/humidity and distance modules use separate I²C buses, which should be checked independently during troubleshooting.
+
+
+DS18B20 and the external water-level-module power-switch circuit are currently disabled. Definitions retained in a configuration file do not mean these functions should be connected or enabled.
+
+
+\clearpage
+
+\subsection{Hardware diagram and connection table}
+
+\begin{center}\includegraphics[width=\linewidth,height=90mm,keepaspectratio]{wiring-realistic.png}
+\par\small Figure 2. Wiring illustration from the original manual. Colours aid identification; connect by module terminal labels and the table below.
+\end{center}
+
+\begin{longtable}{p{42mm}p{59mm}p{58mm}}
+\toprule
+\textbf{Module terminal} & \textbf{ESP32 / supply terminal} & \textbf{Check}\\\midrule\endhead
+SHT3x SDA / SCL & GPIO21 / GPIO22 & First I²C bus\\
+VL53L0X SDA / SCL & GPIO27 / GPIO26 & Second I²C bus\\
+Moisture 1 AO & GPIO34 & First wetting point\\
+Moisture 2 AO & GPIO36 / VP & Not GPIO35 or VN\\
+Light AO & GPIO39 / VN & Do not use DO\\
+Water-level AO & GPIO32 & Raw ADC, not millilitres\\
+SEN0487 A & GPIO33 & Analogue audio\\
+Sensor VCC / VIN and GND & 3V3 and common GND & Confirm 3.3V compatibility\\
+MG90S signal, positive and negative supply & GPIO13, separate 5V, common GND & Check manufacturer terminal markings\\
+\bottomrule\end{longtable}
+
+VP means GPIO36 and VN means GPIO39; neither denotes supply polarity. D-prefixed board labels refer to GPIO numbers, whereas computer COM numbers identify programming connections. Check the actual expansion board's S/V/G order, using continuity tests with power off if necessary. Do not infer hidden connections from photographs.
+
+
+\clearpage
+
+\subsection{Sensor and water-system principles}
+
+SHT3x measures cavity temperature and humidity; temperature participates in current watering control. Light, water level and material moisture are used as raw ADC readings, not calibrated lux, millilitres or moisture percentage. Two moisture locations indicate whether water reaches different points, but cannot establish uniform wetting across the entire surface.
+
+
+VL53L0X measures entrance-area distance, and software uses consecutive readings to confirm possible entry and exit. SEN0487 supplies analogue sound for recording after an entry event. Keep the microphone suitably separated from water and servo vibration.
+
+
+The water route is elevated tank, servo valve, tubing and external distribution layer. Gravity delivers water and capillary action spreads it without an additional pump. Evaporation depends on temperature, humidity, airflow, supply rate and material contact; evaluate its effects through comparative measurements.
+
+
+\subsection{Mechanical movement and feedback boundaries}
+
+PWM commands drive the servo and its mechanical coupling to the valve. The command changes gradually between closed and open endpoints, taking approximately 13 seconds. Dashboard state reflects commands; there is no flow meter or valve-position feedback. Check actual discharge and material wetting to establish the physical response.
+
+
+Initially disconnect the linkage, check direction and endpoints, and then reconnect it. Replacing the servo, valve or bracket requires recalibrating pulse endpoints and mechanical limits to avoid stalls. Tank height, tube diameter and valve design influence flow and should be recorded with assembly details.
+
+
+\subsection{Replication checks for this chapter}
+
+Verify every signal, supply and ground connection. Keep analogue output within input limits and check for ESP32 resets during servo operation. Validate without water before checking the filled water path. The temperature/humidity probe measures cavity air, whereas moisture probes measure the distribution material; their mounting purposes must remain distinct.
 
 
 \clearpage
 \section{Software design and implementation}
 
-presence\_sensor.c and shared/presence.h confirm suspected entry using consecutive distance samples and separate entry/exit thresholds. Entry requests about 30 seconds of recording; continuous occupancy does not repeatedly retrigger it. analog.c acquires microphone PCM and metrics, while audio\_record.c manages limited Flash buffers and delivery. Distance and audio do not establish species identity.
+\subsection{Modules and responsibilities}
 
-The computer discovers the device through UDP 9002, then receives telemetry on TCP 9000 and audio on TCP 9001. Telemetry uses a version header and CSV rows with boot identity, sequence, uptime, validity and control states; the computer adds reception time. Audio carries metadata, PCM and CRC32; the receiver validates and writes WAV before acknowledgement. CRC checks transport integrity, not gap-free acquisition. Flash storage is limited: offline recordings may be overwritten, and complete offline telemetry history is not backfilled.
-
-
-Step-by-step browser operation belongs in the user manual. This section retains functional scope and code responsibilities. The accompanying user manuals now include screenshot-based instructions for live monitoring, trends, CSV export, recordings, WAV import and settings.
-
-\begin{longtable}{p{77.0mm} p{77.0mm}}\toprule
-\textbf{Function} & \textbf{Implementation and boundaries}\\\midrule\endhead
-Live monitoring and alerts & Temperature, humidity, distance, audio, valve, wick states and maintenance indicators; invalid or stale data do not establish normal conditions\\
-Trends and export & Up to 900 recent samples retained for display; CSV persists on disk and export corresponds to the current server session\\
-Recording archive & Up to 250 recent WAV files displayed, with search, waveform, playback, download and WAV import; display limit is not deletion policy\\
-Audio analysis & Explicit user request sends a selected file through Node.js to the configured provider; results remain unverified candidates\\
-Settings and language & Device address, analysis provider and options; API key held only in process memory and re-entered after restart\\
+\begin{longtable}{p{54mm}p{111mm}}
+\toprule
+\textbf{Module / location} & \textbf{Main responsibility}\\\midrule\endhead
+project/firmware/main/ & Startup, sensor acquisition, networking and task organisation\\
+sensors.c, analog.c & Digital sensors, analogue values and sound acquisition\\
+presence\_sensor.c, shared/presence.h & Distance-event confirmation and entry/exit states\\
+servo.c, shared/valve\_control.h & PWM movement and watering-control state\\
+audio\_record.c & Audio buffering, recording and transfer\\
+website/protocol.js & Telemetry parsing and audio validation\\
+website/server.js & Connections, storage, web interfaces and analysis proxy\\
+website/public/ & Pages, styling, interactions and control-state display\\
 \bottomrule\end{longtable}
-website/protocol.js parses telemetry and validates audio. server.js handles connections, persistence and APIs. public/app.js manages browser interactions, and public/control-view.js renders valve and maintenance states. The dashboard has no manual valve switch. Closing the browser or pausing reception does not change firmware thresholds. Threshold changes require rebuilding and reflashing, with corresponding documentation and acceptance updates.
 
-Telemetry is stored in website/data/session\_*.csv, audio in website/recordings/, results in website/data/results.json and non-secret settings in settings.json. The browser accesses Node.js at \url{http://127.0.0.1:8766} rather than reading sensors directly. Diagnose acquisition, transport, server reception and browser rendering as separate stages.
+The device periodically samples sensors, maintains validity flags and control state, and transmits telemetry. Values, validity and freshness must be distinguished: invalid or stale data cannot be treated as normal measurements. Software cannot necessarily identify floating ADC readings from disconnected modules.
 
 
-Valid light ADC below 500 and valid temperature above 30°C request opening. Once the commanded fully open position is reached, hold at least 60 seconds and check once per minute. Close only below 26°C; otherwise remain open. Later light changes do not end the cycle. Invalid temperature prolongs opening. Low water warns only and does not inhibit opening. This corrects the older manual's statement that temperature does not participate in control.
+\subsection{Drip-watering control logic}
 
-Servo output is 50 Hz: 1200 μs open and 2500 μs closed, changing by 10 μs every 100 ms. Calibrate travel against the actual mechanism and avoid forcing mechanical stops. Displayed position is commanded position, without mechanical feedback.
+While closed, opening is requested only when light data is valid and ADC＜500, and temperature is valid and above 30°C. Timing starts when the servo reaches its commanded fully open state. Hold for at least 60 seconds, then check temperature every minute: close only if it is valid and below 26°C; otherwise remain open until the next check.
 
-For both moisture channels, ADC below 2000 means wet and at least 2300 means dry. Intermediate readings retain the previous state; an initial intermediate or invalid reading is unknown. Either point remaining dry after at least 60 seconds fully open triggers possible blockage. Record dry, wet and intermediate readings before adjusting thresholds.
 
-Water ADC below 50 requests refilling; the “below 50 ml” label is not a volume measurement. Light is raw ADC, not lux: verify direction with actual shading and illumination. Three consecutive distance readings at or below 189 mm trigger entry; five at or above 220 mm clear occupancy, with approximately 100 ms sampling. Remeasure empty-cavity distance in the completed enclosure. Entry triggers approximately 30 seconds of audio.
+Changes in light after opening do not terminate the current cycle. Invalid temperature does not trigger closure. Low water level raises an alert but currently does not interlock valve opening. Test each of these implemented behaviours separately.
+
+
+Opening conditions $\rightarrow$ gradual servo movement $\rightarrow$ commanded fully open $\rightarrow$ hold 60 seconds $\rightarrow$ temperature check $\rightarrow$ close or continue waiting.
+
+
+\clearpage
+
+\subsection{Current parameters and calibration locations}
+
+\begin{longtable}{p{42mm}p{59mm}p{58mm}}
+\toprule
+\textbf{Item} & \textbf{Current value / behaviour} & \textbf{Replication consideration}\\\midrule\endhead
+Opening & Valid light ADC＜500 and temperature＞30°C & Check ADC direction under shaded / illuminated conditions\\
+Closing & Check every minute after at least 60 seconds fully open; temperature＜26°C & Equality does not satisfy a strict comparison\\
+Servo PWM & 50Hz; open 1200μs, closed 2500μs & Calibrate to the valve; these are not angles\\
+Servo ramp & 10μs every 100ms & Approximately 13 seconds full travel\\
+Material moisture & ADC＜2000 wet; $\geq$2300 dry & Retain prior state in between; initial or invalid state is unknown\\
+Water-delivery alert & Fully open $\geq$60 seconds and either point still dry & Possible fault only; inspect water path manually\\
+Low-water alert & ADC＜50 & The “below 50ml” label is not volumetric calibration\\
+Entry / exit & Three consecutive readings $\leq$189mm / five $\geq$220mm & Approximately 100ms sampling; remeasure background after enclosure installation\\
+Event recording & Approximately 30 seconds & Continuous occupancy does not repeatedly trigger\\
+\bottomrule\end{longtable}
+
+Pins, feature switches and some thresholds are in project\_config.h. Watering logic is in shared/valve\_control.h; material moisture, maintenance alerts and entry/exit states are in the corresponding shared modules. Threshold changes require editing, rebuilding and flashing firmware and updating calibration records.
+
+
+\subsection{Distance triggers and audio buffering}
+
+Consecutive-reading confirmation and different entry/exit thresholds reduce boundary jitter. An entry event requests recording, after which PCM and metadata are sent to the computer. Flash capacity is limited: offline recordings can be overwritten, so the buffer is not an indefinite archive.
+
+
+Audio transfer includes CRC32. The computer validates the data, writes WAV and acknowledges reception. CRC32 checks transfer integrity, not absence of sampling gaps or the identity of the recorded subject.
+
+
+\clearpage
+
+\subsection{Communication and storage}
+
+\begin{longtable}{p{42mm}p{59mm}p{58mm}}
+\toprule
+\textbf{Link} & \textbf{Address / port} & \textbf{Purpose}\\\midrule\endhead
+Device discovery & UDP 9002 & Discover the ESP32 on the LAN\\
+Telemetry & TCP 9000 & Version header and CSV rows with sequence, time and status\\
+Audio & TCP 9001 & Metadata, PCM and validation\\
+Browser & http://127.0.0.1:8766 & Local Node.js service\\
+\bottomrule\end{longtable}
+
+Connect the computer and ESP32 to the same router. Telemetry includes boot identifier, sequence number, uptime and validity; the computer separately records reception time to distinguish device time from arrival time. If discovery fails, manually enter the IP printed on the serial console.
+
+
+\begin{longtable}{p{54mm}p{111mm}}
+\toprule
+\textbf{Storage location} & \textbf{Content}\\\midrule\endhead
+website/data/session\_*.csv & Service-session telemetry\\
+website/recordings/ & WAV recordings\\
+website/data/results.json & Audio-analysis results\\
+website/data/settings.json & Non-sensitive settings\\
+\bottomrule\end{longtable}
+
+\subsection{Dashboard and optional audio analysis}
+
+The dashboard provides live state, trends, maintenance alerts, CSV export, recording search, playback, downloads and WAV imports. Trends use up to 900 recent samples held by the backend. The recording list displays up to 250 recent WAV files; this display limit is not an automatic deletion rule.
+
+
+After the user selects audio and explicitly starts analysis, Node.js calls the configured external service. Results are candidates requiring verification. API keys remain in service-process memory and must be entered again after restart.
+
+
+There is no manual valve switch in the dashboard. Closing the page or pausing reception does not change firmware thresholds. Troubleshoot device acquisition, network transfer, service reception and browser display separately.
 
 
 \clearpage
 \section{3D modelling and mechanical design}
 
-Full-size design benchmark: floor 250 × 300 mm, height 550 mm and entrance diameter 85 mm. Source: Victorian Government wildlife rehabilitation guidelines, Chapter 9, page 385, \url{https://www.wildlife.vic.gov.au/}\_\_data/assets/pdf\_file/0021/671250/Part-B-Mammals-Chapter-9.pdf . These rehabilitation-context dimensions are the project's adopted benchmark; actual prototype measurements remain separate and field suitability is not established.
+\subsection{Model structure and design intent}
 
-The following fields are intentionally blank. They are not manufacturing specifications until completed. Use millimetres throughout.
+Blender is used for structural design. Existing screenshots show a curved shell, triangular openings and continuous edges. Openings provide ventilation paths; edges provide a basis for assembly. Final strength and fastening must be validated against actual wall thickness, material and connection methods.
 
-\begin{longtable}{p{77.0mm} p{77.0mm}}\toprule
-\textbf{Item} & \textbf{Information required}\\\midrule\endhead
-Overall dimensions & Height [TBD] × width [TBD] × depth [TBD]\\
-Body and lid & Material [TBD]; wall thickness [TBD]; STL/STEP files [TO BE PROVIDED]\\
-Entrance & Diameter [TBD]; height above base [TBD]; orientation [TBD]\\
-Resting cavity & Internal diameter or width/depth [TBD]; usable height [TBD]\\
-Electronics bay and service opening & Dimensions, water separation and access method [TBD]\\
-Mounting & Hole sizes/spacing, fasteners and tree attachment method [TBD]\\
-Reservoir and water path & Capacity, position, tube diameter, valve, outlet and leak prevention [TBD]\\
-Wicking layer & Material, dimensions, routing and separation from resting space [TBD]\\
-Servo bracket & Mounting centres, linkage, travel limits and valve coupling [TBD]\\
-Sensor placement & Each sensor's distance from entrance, base and wicking layer [TBD]\\
-Bark finish & Actual material, attachment and surface treatment [TBD]\\
-Printing settings & Process, layer height, infill, supports and orientation [TBD]\\
+
+\begin{center}\includegraphics[width=\linewidth,height=68mm,keepaspectratio]{images/M1.png}
+\par\small Figure 3. Detail of the ventilated structure: curved mesh and triangular openings.
+\end{center}
+
+\begin{center}\includegraphics[width=\linewidth,height=68mm,keepaspectratio]{images/M2.jpg}
+\par\small Figure 4. Overall model: curved shell, openings and edges. Neither image provides manufacturing dimensions.
+\end{center}
+
+The repository's modeling directory contains Blender assets. Match the chosen file to the final physical revision before checking units, scale and exported meshes. Image proportions do not replace dimensioned drawings.
+
+
+\clearpage
+
+\subsection{Three-layer structure and installation layout}
+
+From inside out, the enclosure consists of a ventilated structural layer, capillary water-distribution layer and bark layer. Continuous material contact spreads water. Keep the wet layer and drainage away from the resting space and electronics. Preserve the entrance and necessary ventilation when fastening the exterior.
+
+
+Position the temperature/humidity probe to represent cavity air. Keep the distance sensor's field of view clear of wires and shell surfaces, and keep the microphone away from water and servo vibration. Place moisture probes at different distribution points. Mark the tank, valve, service opening and wiring attachments on the final structural drawing.
+
+
+\subsection{Parameters required before manufacture}
+
+\begin{longtable}{p{54mm}p{111mm}}
+\toprule
+\textbf{Object} & \textbf{Measurements or decisions still required}\\\midrule\endhead
+Body and lid & Height, width, depth, wall thickness, material, split and joining method\\
+Entrance and interior & Entrance diameter, height above base and usable cavity dimensions\\
+Ventilation openings & Diameter or side length, count, spacing and covered area\\
+Tank and water path & Capacity, relative height, tube diameter, valve and drainage route\\
+Servo and electronics compartment & Bracket dimensions, hole locations, limits and access\\
+Layer materials & Mat thickness and layout dimensions; bark attachment\\
+Fabrication and printing & Equipment, material, layer height, infill, supports and orientation\\
 \bottomrule\end{longtable}
-Suggested assembly order: fabricate and deburr the enclosure; trial-fit the electronics bay and reservoir; dry-fit the valve, servo bracket and tubes; position the wicking layer and two moisture points; install temperature/humidity, distance and microphone modules; secure the harness; verify the electronics; finally introduce water. This is assembly guidance, not a claim that the missing design has been finalised.
 
-The temperature/humidity sensor should observe cavity air rather than touch wet cloth. Keep wiring and enclosure surfaces out of the distance sensor's field of view. Protect the microphone from water and separate it from servo vibration where practical. The moisture sensors must observe different locations. Record final positions in the manufacturing drawings rather than relying only on photographs.
+Complete values were not supplied, so these materials cannot produce accurate manufacturing drawings. The original manual's future full-scale benchmark is not the measured size of this prototype. Replicate from confirmed models and measurement tables.
 
-\subsection{Three-layer enclosure}
-From inside to outside, the prototype comprises a perforated ventilation layer, a wicking layer and an outer bark layer. Multiple openings in the inner layer provide paths for air circulation. The middle layer uses horticultural capillary matting to absorb and spread water. The outer bark provides a tree-like finish. Capillary transport is passive and does not require an additional pump.
 
-The matting is intended to reduce concentration of water at the lowest point and help maintain wetting when the enclosure is tilted. Actual uniformity depends on inclination, continuous material contact, supply rate and evaporation. Maintain contact across the matting, avoid folds obstructing ventilation holes, and route moisture and drainage away from the resting cavity and electronics.
+\subsection{Modelling and export advice}
 
-Test upright and at the intended inclination, recording wetting response at both probes and inspecting upper, lower and circumferential areas. Two readings support inspection but do not establish whole-surface uniformity. Hole diameter, count, spacing and layer thickness remain to be supplied.
-
-\par\vspace{2mm}\noindent\begin{minipage}{\linewidth}
-\begin{minipage}[t]{0.47\linewidth}\centering\vspace{0pt}\includegraphics[width=\linewidth,height=46mm,keepaspectratio]{images/M1.png}\par\vspace{2mm}{\setstretch{1.1}\footnotesize Figure M1 Ventilation-layer 3D detail: curved lattice and triangular openings. Dimensions are not shown.\par}\end{minipage}\hfill \begin{minipage}[t]{0.47\linewidth}\centering\vspace{0pt}\includegraphics[width=\linewidth,height=46mm,keepaspectratio]{images/M2.jpg}\par\vspace{2mm}{\setstretch{1.1}\footnotesize Figure M2 Overall 3D view of the curved ventilation shell, perforated area and continuous edges.\par}\end{minipage}\par\vspace{3mm}
-\begin{minipage}[t]{0.47\linewidth}\centering\vspace{0pt}\includegraphics[width=\linewidth,height=46mm,keepaspectratio]{images/M3.jpg}\par\vspace{2mm}{\setstretch{1.1}\footnotesize Figure M3 Assembly stage: entrance, ventilation lattice, two capacitive probes and external ESP32.\par}\end{minipage}\hfill \begin{minipage}[t]{0.47\linewidth}\centering\vspace{0pt}\includegraphics[width=\linewidth,height=46mm,keepaspectratio]{images/M4.jpg}\par\vspace{2mm}{\setstretch{1.1}\footnotesize Figure M4 Wicking-layer assembly: yellow horticultural capillary matting laid along the body beside moisture-monitoring locations.\par}\end{minipage}
-\end{minipage}\par\vspace{2mm}
-\par\vspace{2mm}\noindent\begin{minipage}{\linewidth}\centering\includegraphics[width=0.40\linewidth,height=55mm,keepaspectratio]{images/M5.jpg}\par{\small Figure M5 Outer bark finish: overlapping bark pieces with the entrance retained.}\end{minipage}\par\vspace{2mm}
-These team-supplied design views and photographs document different assembly stages. They show structure and placement; prototype dimensions, material thickness and attachment details still require measurement.
+Determine actual component and water-system clearances before adjusting the exterior. Check units, mesh closure, wall thickness, holes and assembly tolerances. Validate fit with small connection samples before manufacturing the full body. Deliver editable .blend files, manufacturing meshes and dimensioned drawings. Determine print settings experimentally for the actual equipment and material rather than inferring them from screenshots.
 
 
 \clearpage
 \section{Enclosure fabrication and system assembly}
-Complete the electronics and software on the bench before installing them in the enclosure. Prepare and deburr the shell, trial-fit the tank and electronics, and dry-fit the valve, servo bracket and tubing. Fit continuous capillary matting and place the two moisture probes at different locations. Install the air-temperature sensor, distance sensor and microphone without obstructing the sensing area. Secure wiring, apply the bark covering while retaining the entrance and service access, and only then add water and check for leakage. Record the actual materials, dimensions and fasteners; the photographs do not supply manufacturing tolerances.
 
-Test wetting in both upright and expected tilted orientations. Keep drainage and the wet layer away from electronics and the resting space. Two wetness readings do not establish uniform wetting over the whole enclosure.
+\subsection{Physical assembly references}
+
+\begin{center}\includegraphics[width=\linewidth,height=68mm,keepaspectratio]{images/M3.jpg}
+\par\small Figure 5. Assembly stage showing the body, entrance, two capacitive moisture probes and externally connected electronics.
+\end{center}
+
+\begin{center}\includegraphics[width=\linewidth,height=68mm,keepaspectratio]{images/M4.jpg}
+\par\small Figure 6. Capillary material installation: maintain contact with the structure and check wetting at different locations.
+\end{center}
+
+Photographs illustrate assembly relationships in the existing prototype. Complete records of material composition, adhesives, fasteners and waterproof rating are not available and should be completed before replication.
+
+
+\clearpage
+
+\subsection{Recommended assembly sequence}
+
+\begin{longtable}{p{42mm}p{59mm}p{58mm}}
+\toprule
+\textbf{Stage} & \textbf{Work} & \textbf{Completion check}\\\midrule\endhead
+1 Bench validation & Connect sensors, firmware and dashboard; initially unload the servo & Valid data and correct movement direction\\
+2 Body preparation & Manufacture, clean edges and check entrance and space & No burrs; components fit and remain accessible\\
+3 Dry-fit water path & Fit tank, tubing, valve and servo bracket & No interference or movement against limits\\
+4 Distribution layer & Install continuous capillary mat and two moisture points & Good contact; ventilation and entrance unobstructed\\
+5 Sensors & Install temperature/humidity, distance and microphone modules & Appropriate positions and clear sensing area\\
+6 Wiring & Secure electronics and organise cables & Separate water and electronics; reliable connections and access\\
+7 Bark covering & Attach bark pieces while retaining entrance & No crushed cables or obstructed water/service paths\\
+8 Wet commissioning & Add a little water, inspect, then run a complete cycle & No leakage; recordable wetting response\\
+\bottomrule\end{longtable}
+
+\subsection{Distribution-layer and enclosure considerations}
+
+Capillary matting distributes water according to contact continuity, inclination and supply conditions. Avoid unsupported areas, folds and blocked openings. Check upper, lower and circumferential wetting at the expected installation angle.
+
+
+Maintain repeatable moisture-probe contact so disassembly does not change readings. Make electronics, power connectors and tubing joints inspectable. Exposed wiring in photographs is not a specification for long-term outdoor installation.
+
+
+After assembly, record sensor positions, tank height, tubing routes and material specifications, and photograph the interior before covering it to support maintenance and future replication.
+
 
 \clearpage
 \section{System testing and result recording}
 
-\begin{enumerate}
-\item Disconnect all power. Check ground continuity, signal endpoints and shorts. Temporarily disconnect the servo linkage from the valve.
-\item Power only the ESP32. Check serial startup and the 3V3 rail, then disconnect power before adding sensors. Power off before every wiring change.
-\item Connect SHT3x first and confirm valid temperature/humidity. Add VL53L0X and check distance changes with a test object.
-\item Add analogue modules individually. Record dry/wet, shaded/lit, water-level and sound responses. Floating readings from an unplugged input do not demonstrate correct hardware operation.
-\item Connect the separate 5 V servo supply with common ground. Test unloaded direction and approximately 13-second full travel before attaching the linkage. Check for binding.
-\item Add water and verify that both monitored wicking locations actually become wet. Inspect the electronics bay and resting space for leakage. An open display does not prove water flow.
-\item Save a CSV and WAV, restart the system and confirm reconnection. Record supply details, firmware revision, sensor placement and calibration values.
-\end{enumerate}
-\subsection{Evidence and outstanding measurements}
-This revision does not report a new physical experiment. Source code supports implementation descriptions and photographs support assembly relationships. Record firmware version, sensor positions, raw readings, expected and observed behaviour, timestamps and output files for each test. Cooling claims require comparable watered and unwatered conditions, ambient temperature and humidity records, repeated measurements and stated sensor uncertainty. Quantitative thermal results and complete manufacturing dimensions remain to be supplied.
+\subsection{Available evidence and result boundaries}
+
+This revision checks the existing manual, team images, repository configuration and control logic; it does not include new physical experiments. Code supports implementation descriptions and photos support assembly relationships. Neither replaces whole-system acceptance or thermal measurements. The following is a proposed test plan, not a list of passed tests.
+
+
+\begin{longtable}{p{42mm}p{59mm}p{58mm}}
+\toprule
+\textbf{Test} & \textbf{Procedure and observation} & \textbf{Record}\\\midrule\endhead
+Power and wiring & Check continuity unpowered, add modules individually and observe servo voltage drop & Voltages, unexpected resets and wiring revision\\
+Sensors & Vary light, wetness, water level and distance; check temperature/humidity validity & Raw ADC, reference conditions and positions\\
+Watering control & Cover thresholds, 60-second hold, invalid temperature and low water & Commands, physical motion and timing\\
+Water distribution & Observe discharge and two wetting points; vary inclination & Response times, wetting distribution and leaks\\
+Events and audio & Enter, remain, leave and re-enter & Event count, WAV duration and playback\\
+Network and storage & Save CSV/WAV, disconnect and restart service & File integrity, recovery and gaps\\
+Enclosure integration & Check obstruction, vibration, access and separation of water/electronics & Problem photos and corrective actions\\
+\bottomrule\end{longtable}
+
+\subsection{Evaluating cooling performance}
+
+To report cooling, establish comparable watered and unwatered conditions. Record ambient temperature/humidity, irradiation or light conditions, airflow, water supply, sensor locations and measurement times. Preserve raw data, compare cavity-temperature changes under comparable conditions, and document repetitions and sensor error.
+
+
+If only a single temperature decrease is observed, report its conditions and interval rather than inferring long-term performance. Two wet probes demonstrate local material response, not whole-system cooling or uniform watering.
+
+
+\subsection{Test-record format}
+
+For each run record date, operator, firmware commit, component models, calibration values, positions, input, expected behaviour, actual observations, file names and conclusion. Quantitative results remain to be supplied by the team. Mark untested items as pending and retain failures and retest records.
+
 
 \clearpage
 \section{Replication advice and future improvements}
 
-Clone the repository with git clone \url{https://github.com/SMGG2302/comp-5047.git} . This guide corresponds to e40f8b5; use git checkout e40f8b5 to reproduce that revision. For a newer revision, recheck project\_config.h and CURRENT\_SETUP.md.
+\subsection{Software deployment}
 
-Install Node.js 18 or later and PlatformIO. The firmware directory is project/firmware. Copy wifi\_credentials.example.h to wifi\_credentials.h and enter the local 2.4 GHz router credentials. Do not commit real credentials.
-
-In project/firmware, run pio run, then pio device list. Flash with pio run -t upload --upload-port COMx and monitor with pio device monitor -p COMx -b 115200. Replace COMx with the identifier reported by the operating system. The first build downloads the toolchain. Retain partitions.csv to preserve the audio-cache partition layout.
-
-If Windows builds fail because of non-ASCII paths, review build-ascii.ps1 and update its machine-specific build and PlatformIO paths before using it. Other computers may not have those directories.
-
-In website, run node server.js and open \url{http://127.0.0.1:8766.} Connect the computer and ESP32 to the same router without client isolation. Select auto discovery or enter the IP printed by the serial monitor. Discovery uses UDP 9002, telemetry TCP 9000 and audio TCP 9001. Avoid running a competing receiver at the same time.
+Prepare Node.js 18 or later and PlatformIO. Clone and select the version checked for this manual. If later revisions change pins, protocols or thresholds, recheck the associated instructions.
 
 
-\begin{longtable}{p{77.0mm} p{77.0mm}}\toprule
-\textbf{Symptom} & \textbf{Check first}\\\midrule\endhead
-No COM device & Data-capable USB cable, connectors, driver and port identification\\
-Reset during servo motion & Supply branch, common ground, voltage drop and mechanical stall\\
-Incorrect second moisture channel & Wrong D35/VN connection; correct input is VP/GPIO36\\
-Invalid temperature/humidity or distance & Mixed I²C buses, swapped SDA/SCL, power and ground\\
-Fixed extreme or drifting analogue readings & Signal voltage, AO rather than DO, loose wire or absent module\\
-Device missing from dashboard & Same LAN, client isolation, firewall, serial IP and other receivers\\
-Material remains dry after opening & Empty reservoir, blockage, valve not physically open, material placement/contact\\
+\begingroup\small\begin{verbatim}
+git clone \url{https://github.com/SMGG2302/comp-5047}.git
+cd comp-5047
+git checkout e40f8b5
+\end{verbatim}\endgroup
+
+In project/firmware/main, copy wifi\_credentials.example.h to wifi\_credentials.h and enter the local 2.4GHz router credentials. Exclude real credentials from shared packages. Retain partitions.csv to preserve the audio-buffer layout.
+
+
+Run these commands in project/firmware. COM7 is an example; substitute the actual port from the device list.
+
+
+\begingroup\small\begin{verbatim}
+pio run
+pio device list
+pio run -t upload --upload-port COM7
+pio device monitor -p COM7 -b 115200
+\end{verbatim}\endgroup
+
+In website, run the service and open the local address in a browser.
+
+
+\begingroup\small\begin{verbatim}
+node server.js
+http://127.0.0.1:8766
+\end{verbatim}\endgroup
+
+Connect computer and ESP32 to the same router, check client isolation and initially select auto for the device address. If discovery fails, use the serial-console IP and check UDP 9002 and TCP 9000 / 9001 connectivity. Avoid running another program that occupies device receiver connections.
+
+
+The first build downloads the toolchain. If a Windows path containing Chinese characters causes failure, consult build-ascii.ps1, adapting its machine-specific paths to the actual computer.
+
+
+\clearpage
+
+\subsection{Staged replication and calibration}
+
+Proceed through component preparation, bench wiring, firmware flashing, service startup, individual-module validation, enclosure assembly, water-system connection and whole-system testing. Save results at each stage before proceeding to make faults easier to locate.
+
+
+Record dry, wet and intermediate material ADC values, then verify light direction, water-level threshold and empty-cavity background distance. Calibrate servo endpoints on the actual mechanism. Do not reuse thresholds unchanged after replacing modules or relocating sensors. Include low-water and invalid-temperature behaviours in testing rather than assuming automatic protection exists.
+
+
+\subsection{Common faults}
+
+\begin{longtable}{p{54mm}p{111mm}}
+\toprule
+\textbf{Symptom} & \textbf{First checks}\\\midrule\endhead
+No COM device & USB data capability, driver, cable and port\\
+Reset during servo motion & Supply branch, common ground, voltage drop and stalling\\
+Second moisture channel abnormal & VP / GPIO36 rather than GPIO35 or VN\\
+Invalid I²C readings & Both buses' SDA / SCL, supply and ground\\
+Drifting or extreme analogue readings & AO connection, voltage range, contact and module presence\\
+Dashboard cannot find device & Same LAN, isolation, firewall, IP and receiver connections\\
+Material stays dry after opening & Tank, obstruction, actual valve position, material placement and contact\\
 \bottomrule\end{longtable}
 
-Supply this manual, editable SVG diagram, revision-pinned source, complete purchasing BOM, CAD and dimensioned drawings, print settings, assembly photographs, calibration records and power-up acceptance records. The next builder must supply their own Wi-Fi credentials and AI key.
+\subsection{Handover information and next improvements}
 
-The wiring and electrical/software replication steps are supplied here. CAD and dimensions remain to be completed. Completing the mechanical specifications and passing staged acceptance are necessary for a complete physical replication handover.
+A complete replication package includes version-fixed code, BOM and purchased models, wiring diagram, Blender sources, manufacturing models and dimensioned drawings, print settings, assembly photos, calibration tables and acceptance records. Priorities are completing mechanical dimensions, attachments, material specifications and quantitative tests.
 
 
-UMass Amherst, Subirrigation Systems, uses capillary mat for horticultural material that transfers water through capillary action. This terminology does not establish the prototype material composition or specification. Source: \url{https://www.umass.edu/agriculture-food-environment/greenhouse-floriculture/fact-sheets/subirrigation-systems}
+Future work can evaluate low-water interlocks, invalid-temperature policy, flow or valve-position feedback, long-term power, drainage and outdoor protection. These are improvement directions rather than confirmed current capabilities.
 
+
+\subsection{Source basis}
+
+This edition is based on SMGG2302/comp-5047 snapshot e40f8b5, with particular checks of project\_config.h, shared/valve\_control.h and website/package.json. Other implementation descriptions and images are drawn from the repository's Chinese technical manual and its LaTeX asset package. Repository: \url{https://github.com/SMGG2302/comp-5047}.
+
+
+The revision adds information structure, technical explanation and replication organisation; proposed tests are not presented as measured results. Update the version and retain a change record when manufacturing parameters and experimental data are supplied.
 
 \end{document}
