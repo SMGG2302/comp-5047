@@ -1,0 +1,1 @@
+Compile technical-zh.tex and technical-en.tex with XeLaTeX twice or Tectonic. Required fonts: Arial and Microsoft YaHei. Both manuals use eight main chapters and retain the original cover and contents styling. The languages are editorially adapted rather than line-by-line translations.
