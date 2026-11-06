@@ -3,6 +3,7 @@
 \usepackage{fontspec,xeCJK}
 \setmainfont{Arial}
 \setCJKmainfont{Microsoft YaHei}
+\usepackage{needspace}
 \usepackage{graphicx,tikz,longtable,array,booktabs,amssymb,setspace,titlesec,fancyhdr,lastpage,hyperref}
 \hypersetup{hidelinks,pdftitle={HollowHaven Technical Manual}}
 \setstretch{1.3}
@@ -34,8 +35,9 @@
 \clearpage
 \renewcommand{\contentsname}{Contents}
 \begingroup\setstretch{1.05}\small\setcounter{tocdepth}{1}\tableofcontents\endgroup\clearpage
+\widowpenalty=10000\clubpenalty=10000\raggedright
 Version: 2026-11-06. English translation of the revised Chinese edition; technical baseline: Git e40f8b5. The manual covers the system, technology stack, hardware, software, structure, assembly, testing and replication. Missing dimensions and measured results remain explicitly pending.
-\section{Project introduction and technical objectives}
+\Needspace{16\baselineskip}\section{Project introduction and technical objectives}
 
 HollowHaven is a course prototype developed for an artificial-hollow shelter concept for Greater Gliders. It explores the integration of environmental monitoring, automatic drip watering and visitor-event recording in one device. An ESP32 collects environmental and equipment data, operates a servo-controlled gravity-fed water supply, and sends data to a computer dashboard for observation and recording.
 
@@ -43,9 +45,9 @@ HollowHaven is a course prototype developed for an artificial-hollow shelter con
 The enclosure combines Blender modelling with layered assembly: a perforated structural layer, a capillary water-distribution layer and an outer bark layer. The structure provides mounting locations for the entrance, sensors and water system; the absorbent material distributes water and the bark forms the exterior covering.
 
 
-\subsection{Three main functional chains}
+\Needspace{6\baselineskip}\subsection{Three main functional chains}
 
-\begin{longtable}{p{42mm}p{59mm}p{58mm}}
+\begin{longtable}{>{\raggedright\arraybackslash}p{42mm}>{\raggedright\arraybackslash}p{59mm}>{\raggedright\arraybackslash}p{58mm}}
 \toprule
 \textbf{Function} & \textbf{Input and processing} & \textbf{Output}\\\midrule\endhead
 Environmental monitoring & Temperature, humidity, light, water level and two material-moisture measurements & Dashboard status, trends, CSV records and maintenance alerts\\
@@ -53,7 +55,7 @@ Automatic drip watering & Valid light and temperature conditions start the servo
 Visitor-event recording & Consecutive distance readings confirm a possible entry & Approximately 30 seconds of recording, WAV storage and optional user-initiated audio analysis\\
 \bottomrule\end{longtable}
 
-\subsection{Technical objectives and validation scope}
+\Needspace{6\baselineskip}\subsection{Technical objectives and validation scope}
 
 The technical objective is to connect sensor acquisition, local device control, LAN transmission, computer storage and browser display, and integrate the electronics into the layered enclosure. Evaluation should establish whether these stages work together consistently, repeatably and maintainably.
 
@@ -61,15 +63,15 @@ The technical objective is to connect sensor acquisition, local device control, 
 The available materials support descriptions of implemented code and assembly relationships shown in photographs. They do not establish a verified temperature reduction, long-term waterproofing or suitability for wildlife. Distance events and audio analysis provide observational clues rather than species identification.
 
 
-\subsection{Expected reader outcomes}
+\Needspace{6\baselineskip}\subsection{Expected reader outcomes}
 
 Readers should be able to explain each technical layer, assemble a bench prototype using the wiring table, deploy the specified software version, check basic functions and identify the dimensional and fabrication information needed for complete mechanical replication.
 
 
-\clearpage
-\section{System architecture and technology stack}
 
-\subsection{System responsibilities}
+\Needspace{16\baselineskip}\section{System architecture and technology stack}
+
+\Needspace{6\baselineskip}\subsection{System responsibilities}
 
 \begin{center}
 \begin{tikzpicture}[every node/.style={draw,rounded corners,align=center,minimum width=36mm,minimum height=17mm,font=\small}]
@@ -86,7 +88,7 @@ Readers should be able to explain each technical layer, assemble a bench prototy
 Figure 1. System architecture. Boxes follow the data-processing sequence. Valve control runs on the device; optional audio analysis is initiated by the user.
 
 
-\begin{longtable}{p{42mm}p{59mm}p{58mm}}
+\begin{longtable}{>{\raggedright\arraybackslash}p{42mm}>{\raggedright\arraybackslash}p{59mm}>{\raggedright\arraybackslash}p{58mm}}
 \toprule
 \textbf{Layer} & \textbf{Current technology} & \textbf{Responsibility}\\\midrule\endhead
 Hardware & ESP32-WROOM-32, sensors, MG90S servo & Physical measurements and valve actuation\\
@@ -98,7 +100,7 @@ Data & CSV, WAV, JSON & Telemetry, audio, analysis results and non-sensitive set
 Structural design & Blender and layered enclosure assembly & Curved shell, ventilation, water distribution and exterior covering\\
 \bottomrule\end{longtable}
 
-\subsection{Architectural choices and operating boundaries}
+\Needspace{6\baselineskip}\subsection{Architectural choices and operating boundaries}
 
 Local device control makes valve decisions independent of whether the dashboard is open. The computer receives, stores and displays data. Disconnecting it interrupts reception but does not stop device-side control. The system cannot recover a complete history of telemetry collected while offline.
 
@@ -106,12 +108,12 @@ Local device control makes valve decisions independent of whether the dashboard 
 Telemetry and audio use separate TCP connections to handle status data and audio files. The browser accesses the local Node.js service rather than reading sensors directly. Optional audio analysis is proxied by the service, and its results do not influence valve decisions.
 
 
-\clearpage
-\section{Hardware design and implementation}
 
-\subsection{Components and purposes}
+\Needspace{16\baselineskip}\section{Hardware design and implementation}
 
-\begin{longtable}{p{42mm}p{59mm}p{58mm}}
+\Needspace{6\baselineskip}\subsection{Components and purposes}
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{42mm}>{\raggedright\arraybackslash}p{59mm}>{\raggedright\arraybackslash}p{58mm}}
 \toprule
 \textbf{Component} & \textbf{Quantity} & \textbf{Interface and purpose}\\\midrule\endhead
 ESP32-WROOM-32 development board and matching expansion board & One each & Acquisition, control and Wi-Fi\\
@@ -127,7 +129,7 @@ Tank, tubing, capillary matting and fasteners & As required by the structure & G
 Confirm the supply and output levels of complete modules before purchase; a bare chip cannot directly replace a module. Exact purchased light, water-level and capacitive-moisture module models, valve and connector specifications remain to be documented. Tools should include a USB data cable, multimeter, small screwdriver, insulation materials and cable ties.
 
 
-\subsection{Power and interface design}
+\Needspace{6\baselineskip}\subsection{Power and interface design}
 
 Power the ESP32 through its onboard USB connector from a regulated 5V USB source. Use 3.3V-compatible sensor modules. Supply the MG90S from a separate regulated 5V branch with a common ground to the ESP32, not from 3V3. Validate the supply against the actual servo load and voltage drop during movement.
 
@@ -138,15 +140,15 @@ Keep all analogue inputs within 0–3.3V and use AO outputs. Analogue acquisitio
 DS18B20 and the external water-level-module power-switch circuit are currently disabled. Definitions retained in a configuration file do not mean these functions should be connected or enabled.
 
 
-\clearpage
 
-\subsection{Hardware diagram and connection table}
 
-\begin{center}\includegraphics[width=\linewidth,height=90mm,keepaspectratio]{wiring-realistic.png}
+\Needspace{6\baselineskip}\subsection{Hardware diagram and connection table}
+
+\noindent\begin{minipage}{\linewidth}\begin{center}\includegraphics[width=\linewidth,height=90mm,keepaspectratio]{wiring-realistic.png}
 \par\small Figure 2. Wiring illustration from the original manual. Colours aid identification; connect by module terminal labels and the table below.
-\end{center}
+\end{center}\end{minipage}
 
-\begin{longtable}{p{42mm}p{59mm}p{58mm}}
+\begin{longtable}{>{\raggedright\arraybackslash}p{42mm}>{\raggedright\arraybackslash}p{59mm}>{\raggedright\arraybackslash}p{58mm}}
 \toprule
 \textbf{Module terminal} & \textbf{ESP32 / supply terminal} & \textbf{Check}\\\midrule\endhead
 SHT3x SDA / SCL & GPIO21 / GPIO22 & First I²C bus\\
@@ -163,9 +165,9 @@ MG90S signal, positive and negative supply & GPIO13, separate 5V, common GND & C
 VP means GPIO36 and VN means GPIO39; neither denotes supply polarity. D-prefixed board labels refer to GPIO numbers, whereas computer COM numbers identify programming connections. Check the actual expansion board's S/V/G order, using continuity tests with power off if necessary. Do not infer hidden connections from photographs.
 
 
-\clearpage
 
-\subsection{Sensor and water-system principles}
+
+\Needspace{6\baselineskip}\subsection{Sensor and water-system principles}
 
 SHT3x measures cavity temperature and humidity; temperature participates in current watering control. Light, water level and material moisture are used as raw ADC readings, not calibrated lux, millilitres or moisture percentage. Two moisture locations indicate whether water reaches different points, but cannot establish uniform wetting across the entire surface.
 
@@ -176,7 +178,7 @@ VL53L0X measures entrance-area distance, and software uses consecutive readings 
 The water route is elevated tank, servo valve, tubing and external distribution layer. Gravity delivers water and capillary action spreads it without an additional pump. Evaporation depends on temperature, humidity, airflow, supply rate and material contact; evaluate its effects through comparative measurements.
 
 
-\subsection{Mechanical movement and feedback boundaries}
+\Needspace{6\baselineskip}\subsection{Mechanical movement and feedback boundaries}
 
 PWM commands drive the servo and its mechanical coupling to the valve. The command changes gradually between closed and open endpoints, taking approximately 13 seconds. Dashboard state reflects commands; there is no flow meter or valve-position feedback. Check actual discharge and material wetting to establish the physical response.
 
@@ -184,17 +186,17 @@ PWM commands drive the servo and its mechanical coupling to the valve. The comma
 Initially disconnect the linkage, check direction and endpoints, and then reconnect it. Replacing the servo, valve or bracket requires recalibrating pulse endpoints and mechanical limits to avoid stalls. Tank height, tube diameter and valve design influence flow and should be recorded with assembly details.
 
 
-\subsection{Replication checks for this chapter}
+\Needspace{6\baselineskip}\subsection{Replication checks for this chapter}
 
 Verify every signal, supply and ground connection. Keep analogue output within input limits and check for ESP32 resets during servo operation. Validate without water before checking the filled water path. The temperature/humidity probe measures cavity air, whereas moisture probes measure the distribution material; their mounting purposes must remain distinct.
 
 
-\clearpage
-\section{Software design and implementation}
 
-\subsection{Modules and responsibilities}
+\Needspace{16\baselineskip}\section{Software design and implementation}
 
-\begin{longtable}{p{54mm}p{111mm}}
+\Needspace{6\baselineskip}\subsection{Modules and responsibilities}
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{54mm}>{\raggedright\arraybackslash}p{111mm}}
 \toprule
 \textbf{Module / location} & \textbf{Main responsibility}\\\midrule\endhead
 project/firmware/main/ & Startup, sensor acquisition, networking and task organisation\\
@@ -210,7 +212,7 @@ website/public/ & Pages, styling, interactions and control-state display\\
 The device periodically samples sensors, maintains validity flags and control state, and transmits telemetry. Values, validity and freshness must be distinguished: invalid or stale data cannot be treated as normal measurements. Software cannot necessarily identify floating ADC readings from disconnected modules.
 
 
-\subsection{Drip-watering control logic}
+\Needspace{6\baselineskip}\subsection{Drip-watering control logic}
 
 While closed, opening is requested only when light data is valid and ADC＜500, and temperature is valid and above 30°C. Timing starts when the servo reaches its commanded fully open state. Hold for at least 60 seconds, then check temperature every minute: close only if it is valid and below 26°C; otherwise remain open until the next check.
 
@@ -221,11 +223,11 @@ Changes in light after opening do not terminate the current cycle. Invalid tempe
 Opening conditions $\rightarrow$ gradual servo movement $\rightarrow$ commanded fully open $\rightarrow$ hold 60 seconds $\rightarrow$ temperature check $\rightarrow$ close or continue waiting.
 
 
-\clearpage
 
-\subsection{Current parameters and calibration locations}
 
-\begin{longtable}{p{42mm}p{59mm}p{58mm}}
+\Needspace{6\baselineskip}\subsection{Current parameters and calibration locations}
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{42mm}>{\raggedright\arraybackslash}p{59mm}>{\raggedright\arraybackslash}p{58mm}}
 \toprule
 \textbf{Item} & \textbf{Current value / behaviour} & \textbf{Replication consideration}\\\midrule\endhead
 Opening & Valid light ADC＜500 and temperature＞30°C & Check ADC direction under shaded / illuminated conditions\\
@@ -242,7 +244,7 @@ Event recording & Approximately 30 seconds & Continuous occupancy does not repea
 Pins, feature switches and some thresholds are in project\_config.h. Watering logic is in shared/valve\_control.h; material moisture, maintenance alerts and entry/exit states are in the corresponding shared modules. Threshold changes require editing, rebuilding and flashing firmware and updating calibration records.
 
 
-\subsection{Distance triggers and audio buffering}
+\Needspace{6\baselineskip}\subsection{Distance triggers and audio buffering}
 
 Consecutive-reading confirmation and different entry/exit thresholds reduce boundary jitter. An entry event requests recording, after which PCM and metadata are sent to the computer. Flash capacity is limited: offline recordings can be overwritten, so the buffer is not an indefinite archive.
 
@@ -250,11 +252,11 @@ Consecutive-reading confirmation and different entry/exit thresholds reduce boun
 Audio transfer includes CRC32. The computer validates the data, writes WAV and acknowledges reception. CRC32 checks transfer integrity, not absence of sampling gaps or the identity of the recorded subject.
 
 
-\clearpage
 
-\subsection{Communication and storage}
 
-\begin{longtable}{p{42mm}p{59mm}p{58mm}}
+\Needspace{6\baselineskip}\subsection{Communication and storage}
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{42mm}>{\raggedright\arraybackslash}p{59mm}>{\raggedright\arraybackslash}p{58mm}}
 \toprule
 \textbf{Link} & \textbf{Address / port} & \textbf{Purpose}\\\midrule\endhead
 Device discovery & UDP 9002 & Discover the ESP32 on the LAN\\
@@ -266,7 +268,7 @@ Browser & http://127.0.0.1:8766 & Local Node.js service\\
 Connect the computer and ESP32 to the same router. Telemetry includes boot identifier, sequence number, uptime and validity; the computer separately records reception time to distinguish device time from arrival time. If discovery fails, manually enter the IP printed on the serial console.
 
 
-\begin{longtable}{p{54mm}p{111mm}}
+\begin{longtable}{>{\raggedright\arraybackslash}p{54mm}>{\raggedright\arraybackslash}p{111mm}}
 \toprule
 \textbf{Storage location} & \textbf{Content}\\\midrule\endhead
 website/data/session\_*.csv & Service-session telemetry\\
@@ -275,7 +277,7 @@ website/data/results.json & Audio-analysis results\\
 website/data/settings.json & Non-sensitive settings\\
 \bottomrule\end{longtable}
 
-\subsection{Dashboard and optional audio analysis}
+\Needspace{6\baselineskip}\subsection{Dashboard and optional audio analysis}
 
 The dashboard provides live state, trends, maintenance alerts, CSV export, recording search, playback, downloads and WAV imports. Trends use up to 900 recent samples held by the backend. The recording list displays up to 250 recent WAV files; this display limit is not an automatic deletion rule.
 
@@ -286,28 +288,28 @@ After the user selects audio and explicitly starts analysis, Node.js calls the c
 There is no manual valve switch in the dashboard. Closing the page or pausing reception does not change firmware thresholds. Troubleshoot device acquisition, network transfer, service reception and browser display separately.
 
 
-\clearpage
-\section{3D modelling and mechanical design}
 
-\subsection{Model structure and design intent}
+\Needspace{16\baselineskip}\section{3D modelling and mechanical design}
+
+\Needspace{6\baselineskip}\subsection{Model structure and design intent}
 
 Blender is used for structural design. Existing screenshots show a curved shell, triangular openings and continuous edges. Openings provide ventilation paths; edges provide a basis for assembly. Final strength and fastening must be validated against actual wall thickness, material and connection methods.
 
 
-\begin{center}\includegraphics[width=\linewidth,height=68mm,keepaspectratio]{images/M1.png}
+\noindent\begin{minipage}{\linewidth}\begin{center}\includegraphics[width=\linewidth,height=68mm,keepaspectratio]{images/M1.png}
 \par\small Figure 3. Detail of the ventilated structure: curved mesh and triangular openings.
-\end{center}
+\end{center}\end{minipage}
 
-\begin{center}\includegraphics[width=\linewidth,height=68mm,keepaspectratio]{images/M2.jpg}
+\noindent\begin{minipage}{\linewidth}\begin{center}\includegraphics[width=\linewidth,height=68mm,keepaspectratio]{images/M2.jpg}
 \par\small Figure 4. Overall model: curved shell, openings and edges. Neither image provides manufacturing dimensions.
-\end{center}
+\end{center}\end{minipage}
 
 The repository's modeling directory contains Blender assets. Match the chosen file to the final physical revision before checking units, scale and exported meshes. Image proportions do not replace dimensioned drawings.
 
 
-\clearpage
 
-\subsection{Three-layer structure and installation layout}
+
+\Needspace{6\baselineskip}\subsection{Three-layer structure and installation layout}
 
 From inside out, the enclosure consists of a ventilated structural layer, capillary water-distribution layer and bark layer. Continuous material contact spreads water. Keep the wet layer and drainage away from the resting space and electronics. Preserve the entrance and necessary ventilation when fastening the exterior.
 
@@ -315,9 +317,9 @@ From inside out, the enclosure consists of a ventilated structural layer, capill
 Position the temperature/humidity probe to represent cavity air. Keep the distance sensor's field of view clear of wires and shell surfaces, and keep the microphone away from water and servo vibration. Place moisture probes at different distribution points. Mark the tank, valve, service opening and wiring attachments on the final structural drawing.
 
 
-\subsection{Parameters required before manufacture}
+\Needspace{6\baselineskip}\subsection{Parameters required before manufacture}
 
-\begin{longtable}{p{54mm}p{111mm}}
+\begin{longtable}{>{\raggedright\arraybackslash}p{54mm}>{\raggedright\arraybackslash}p{111mm}}
 \toprule
 \textbf{Object} & \textbf{Measurements or decisions still required}\\\midrule\endhead
 Body and lid & Height, width, depth, wall thickness, material, split and joining method\\
@@ -332,32 +334,32 @@ Fabrication and printing & Equipment, material, layer height, infill, supports a
 Complete values were not supplied, so these materials cannot produce accurate manufacturing drawings. The original manual's future full-scale benchmark is not the measured size of this prototype. Replicate from confirmed models and measurement tables.
 
 
-\subsection{Modelling and export advice}
+\Needspace{6\baselineskip}\subsection{Modelling and export advice}
 
 Determine actual component and water-system clearances before adjusting the exterior. Check units, mesh closure, wall thickness, holes and assembly tolerances. Validate fit with small connection samples before manufacturing the full body. Deliver editable .blend files, manufacturing meshes and dimensioned drawings. Determine print settings experimentally for the actual equipment and material rather than inferring them from screenshots.
 
 
-\clearpage
-\section{Enclosure fabrication and system assembly}
 
-\subsection{Physical assembly references}
+\Needspace{16\baselineskip}\section{Enclosure fabrication and system assembly}
 
-\begin{center}\includegraphics[width=\linewidth,height=68mm,keepaspectratio]{images/M3.jpg}
+\Needspace{6\baselineskip}\subsection{Physical assembly references}
+
+\noindent\begin{minipage}{\linewidth}\begin{center}\includegraphics[width=\linewidth,height=68mm,keepaspectratio]{images/M3.jpg}
 \par\small Figure 5. Assembly stage showing the body, entrance, two capacitive moisture probes and externally connected electronics.
-\end{center}
+\end{center}\end{minipage}
 
-\begin{center}\includegraphics[width=\linewidth,height=68mm,keepaspectratio]{images/M4.jpg}
+\noindent\begin{minipage}{\linewidth}\begin{center}\includegraphics[width=\linewidth,height=68mm,keepaspectratio]{images/M4.jpg}
 \par\small Figure 6. Capillary material installation: maintain contact with the structure and check wetting at different locations.
-\end{center}
+\end{center}\end{minipage}
 
 Photographs illustrate assembly relationships in the existing prototype. Complete records of material composition, adhesives, fasteners and waterproof rating are not available and should be completed before replication.
 
 
-\clearpage
 
-\subsection{Recommended assembly sequence}
 
-\begin{longtable}{p{42mm}p{59mm}p{58mm}}
+\Needspace{6\baselineskip}\subsection{Recommended assembly sequence}
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{42mm}>{\raggedright\arraybackslash}p{59mm}>{\raggedright\arraybackslash}p{58mm}}
 \toprule
 \textbf{Stage} & \textbf{Work} & \textbf{Completion check}\\\midrule\endhead
 1 Bench validation & Connect sensors, firmware and dashboard; initially unload the servo & Valid data and correct movement direction\\
@@ -370,7 +372,7 @@ Photographs illustrate assembly relationships in the existing prototype. Complet
 8 Wet commissioning & Add a little water, inspect, then run a complete cycle & No leakage; recordable wetting response\\
 \bottomrule\end{longtable}
 
-\subsection{Distribution-layer and enclosure considerations}
+\Needspace{6\baselineskip}\subsection{Distribution-layer and enclosure considerations}
 
 Capillary matting distributes water according to contact continuity, inclination and supply conditions. Avoid unsupported areas, folds and blocked openings. Check upper, lower and circumferential wetting at the expected installation angle.
 
@@ -381,15 +383,15 @@ Maintain repeatable moisture-probe contact so disassembly does not change readin
 After assembly, record sensor positions, tank height, tubing routes and material specifications, and photograph the interior before covering it to support maintenance and future replication.
 
 
-\clearpage
-\section{System testing and result recording}
 
-\subsection{Available evidence and result boundaries}
+\Needspace{16\baselineskip}\section{System testing and result recording}
+
+\Needspace{6\baselineskip}\subsection{Available evidence and result boundaries}
 
 This revision checks the existing manual, team images, repository configuration and control logic; it does not include new physical experiments. Code supports implementation descriptions and photos support assembly relationships. Neither replaces whole-system acceptance or thermal measurements. The following is a proposed test plan, not a list of passed tests.
 
 
-\begin{longtable}{p{42mm}p{59mm}p{58mm}}
+\begin{longtable}{>{\raggedright\arraybackslash}p{42mm}>{\raggedright\arraybackslash}p{59mm}>{\raggedright\arraybackslash}p{58mm}}
 \toprule
 \textbf{Test} & \textbf{Procedure and observation} & \textbf{Record}\\\midrule\endhead
 Power and wiring & Check continuity unpowered, add modules individually and observe servo voltage drop & Voltages, unexpected resets and wiring revision\\
@@ -401,7 +403,7 @@ Network and storage & Save CSV/WAV, disconnect and restart service & File integr
 Enclosure integration & Check obstruction, vibration, access and separation of water/electronics & Problem photos and corrective actions\\
 \bottomrule\end{longtable}
 
-\subsection{Evaluating cooling performance}
+\Needspace{6\baselineskip}\subsection{Evaluating cooling performance}
 
 To report cooling, establish comparable watered and unwatered conditions. Record ambient temperature/humidity, irradiation or light conditions, airflow, water supply, sensor locations and measurement times. Preserve raw data, compare cavity-temperature changes under comparable conditions, and document repetitions and sensor error.
 
@@ -409,15 +411,15 @@ To report cooling, establish comparable watered and unwatered conditions. Record
 If only a single temperature decrease is observed, report its conditions and interval rather than inferring long-term performance. Two wet probes demonstrate local material response, not whole-system cooling or uniform watering.
 
 
-\subsection{Test-record format}
+\Needspace{6\baselineskip}\subsection{Test-record format}
 
 For each run record date, operator, firmware commit, component models, calibration values, positions, input, expected behaviour, actual observations, file names and conclusion. Quantitative results remain to be supplied by the team. Mark untested items as pending and retain failures and retest records.
 
 
-\clearpage
-\section{Replication advice and future improvements}
 
-\subsection{Software deployment}
+\Needspace{16\baselineskip}\section{Replication advice and future improvements}
+
+\Needspace{6\baselineskip}\subsection{Software deployment}
 
 Prepare Node.js 18 or later and PlatformIO. Clone and select the version checked for this manual. If later revisions change pins, protocols or thresholds, recheck the associated instructions.
 
@@ -455,9 +457,9 @@ Connect computer and ESP32 to the same router, check client isolation and initia
 The first build downloads the toolchain. If a Windows path containing Chinese characters causes failure, consult build-ascii.ps1, adapting its machine-specific paths to the actual computer.
 
 
-\clearpage
 
-\subsection{Staged replication and calibration}
+
+\Needspace{6\baselineskip}\subsection{Staged replication and calibration}
 
 Proceed through component preparation, bench wiring, firmware flashing, service startup, individual-module validation, enclosure assembly, water-system connection and whole-system testing. Save results at each stage before proceeding to make faults easier to locate.
 
@@ -465,9 +467,9 @@ Proceed through component preparation, bench wiring, firmware flashing, service 
 Record dry, wet and intermediate material ADC values, then verify light direction, water-level threshold and empty-cavity background distance. Calibrate servo endpoints on the actual mechanism. Do not reuse thresholds unchanged after replacing modules or relocating sensors. Include low-water and invalid-temperature behaviours in testing rather than assuming automatic protection exists.
 
 
-\subsection{Common faults}
+\Needspace{6\baselineskip}\subsection{Common faults}
 
-\begin{longtable}{p{54mm}p{111mm}}
+\begin{longtable}{>{\raggedright\arraybackslash}p{54mm}>{\raggedright\arraybackslash}p{111mm}}
 \toprule
 \textbf{Symptom} & \textbf{First checks}\\\midrule\endhead
 No COM device & USB data capability, driver, cable and port\\
@@ -479,7 +481,7 @@ Dashboard cannot find device & Same LAN, isolation, firewall, IP and receiver co
 Material stays dry after opening & Tank, obstruction, actual valve position, material placement and contact\\
 \bottomrule\end{longtable}
 
-\subsection{Handover information and next improvements}
+\Needspace{6\baselineskip}\subsection{Handover information and next improvements}
 
 A complete replication package includes version-fixed code, BOM and purchased models, wiring diagram, Blender sources, manufacturing models and dimensioned drawings, print settings, assembly photos, calibration tables and acceptance records. Priorities are completing mechanical dimensions, attachments, material specifications and quantitative tests.
 
@@ -487,7 +489,7 @@ A complete replication package includes version-fixed code, BOM and purchased mo
 Future work can evaluate low-water interlocks, invalid-temperature policy, flow or valve-position feedback, long-term power, drainage and outdoor protection. These are improvement directions rather than confirmed current capabilities.
 
 
-\subsection{Source basis}
+\Needspace{6\baselineskip}\subsection{Source basis}
 
 This edition is based on SMGG2302/comp-5047 snapshot e40f8b5, with particular checks of project\_config.h, shared/valve\_control.h and website/package.json. Other implementation descriptions and images are drawn from the repository's Chinese technical manual and its LaTeX asset package. Repository: \url{https://github.com/SMGG2302/comp-5047}.
 
